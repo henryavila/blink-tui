@@ -21,23 +21,23 @@ the one motion the contract permits — accented in lavender.
 ## what it looks like
 
 `svcd`, the bundled reference app, exercises every primitive at the 100×30
-design target — two panes, a focused-pane border recolour, a list with state +
-domain glyphs, a live status bar, modal dialogs, search, and the braille spinner:
+design target — two panes, a focused-pane border recolour (lavender, never a
+heavier line), a list with state + domain glyphs, a live status bar, modal
+dialogs, search, and the braille spinner:
 
 ```
  ▎ svcd · built with blink                                                                    ready
-╔═ services (7) ═══════════════════════════════════════╗┌─ detail ─────────────────────────────────┐
-║    ✓ postgres@14.10                    data/pg/main  ║│ docker                                   │
-║    ✓ redis@7.2                           /var/redis  ║│                                          │
-║  ▸ ◯ docker               28 containers · 4 stopped  ║│ state   ◯ starting                       │
-║    ◐ nginx                       config out-of-date  ║│ path    28 containers · 4 stopped        │
-║    ✓ node · api                    pid 4821 · :3000  ║│ port    —                                │
-║    ✗ grafana                        missing on host  ║│                                          │
-║    ✓ ssh-agent                        3 keys loaded  ║│ ↳ actions                                │
-║                                                      ║│ ↯ a  apply now                           │
-║                                                      ║│ ✗ d  remove                              │
-╚══════════════════════════════════════════════════════╝└──────────────────────────────────────────┘
-  tab  pane    /  search    a  apply    d  delete    ?  help    q  reset         ✓ 4  ◯ 1  ◐ 1  ✗ 1
+╭─ services (7) ───────────────────────────────────────╮╭─ detail ─────────────────────────────────╮
+│    ✓ postgres@14.10                    data/pg/main  ││ docker                                   │
+│    ✓ redis@7.2                           /var/redis  ││                                          │
+│  ► ◯ docker               28 containers · 4 stopped  ││ state   ◯ starting                       │
+│    ◐ nginx                       config out-of-date  ││ path    28 containers · 4 stopped        │
+│    ✓ node · api                    pid 4821 · :3000  ││ port    —                                │
+│    ✗ grafana                        missing on host  ││                                          │
+│    ✓ ssh-agent                        3 keys loaded  ││ ↳ actions                                │
+│                                                      ││ ↯ a  apply now                           │
+╰──────────────────────────────────────────────────────╯╰──────────────────────────────────────────╯
+  tab  pane    /  search    a  apply    d  delete    ?  help    q  quit          ✓ 4  ◯ 1  ◐ 1  ✗ 1
 ```
 
 Run it in your terminal (full colour + Nerd Font glyphs) and drive it with the
@@ -67,23 +67,23 @@ import React from 'react';
 import { render, Box, Text } from 'ink';
 import {
   ThemeProvider, detectIconSet,
-  Pane, List, Footer, Spinner,
-  useTokens, useGlyph,
+  Pane, List, Footer,
+  useTokens,
 } from '@henryavila/blink-tui';
 
 function App() {
   const t = useTokens();
-  const g = useGlyph();
   return (
     <Box flexDirection="column" height={30}>
       <Box flexGrow={1} flexDirection="row">
-        <Pane title="services (3)" focused flexBasis="56%">
+        <Pane title="services (3)" tone="focus" flexBasis="56%">
+          {/* rows declare INTENT — state names, not glyphs/colours; blink paints them */}
           <List
             focusedId="pg"
             rows={[
-              { id: 'pg', glyph: g('check'), glyphColor: t.stateOk, label: 'postgres@14.10', meta: 'data/pg' },
-              { id: 'redis', glyph: g('check'), glyphColor: t.stateOk, label: 'redis@7.2' },
-              { id: 'nginx', glyph: g('half'), glyphColor: t.stateDrift, label: 'nginx', meta: 'drift' },
+              { id: 'pg', state: 'installed', label: 'postgres@14.10', meta: 'data/pg' },
+              { id: 'redis', state: 'installed', label: 'redis@7.2' },
+              { id: 'nginx', state: 'drift', label: 'nginx', meta: 'drift' },
             ]}
           />
         </Pane>
@@ -129,13 +129,20 @@ suggestions; they are what makes blink apps look like blink apps.
   **glyphs**, not body text (green is `✓`, not the word "ok").
 - **Every border is a glyph.** Box-drawing characters via `Pane` — never a CSS
   border, radius, or outline (Ink has none anyway; the discipline is in the
-  composition). Single line is default; **double line** is the focused pane or a
-  modal — elevation is border *weight*, not shadow.
+  composition). The house style is **single-line, rounded** corners; there is
+  **no double-line border** (it reads dated). Focus and modals are signalled by
+  border **colour** (lavender), never a heavier line — so the layout never
+  shifts when a pane gains focus.
+- **Intent, not style.** A component takes a *semantic* prop describing what a
+  thing MEANS (`tone="focus"`, `state="installed"`, `selected`,
+  `domain="postgresql"`), never a raw glyph, colour, or shape — blink resolves
+  the looks from the house tokens. This is the rule that keeps every blink app
+  on-style for free (see below).
 - **Flexbox only.** `<Box flexDirection="row|column">`, nested for multi-pane.
   No absolute positioning, no z-index. Target window 100×30; mobile-mosh
   fallback 60×20 (read `useStdoutDimensions()` to switch layouts).
 - **Keyboard only.** No *mouse* scroll, no scrollbar, no wheel, no hover. Focus
-  is character-based: the `▸` caret, a surface fill, or a recoloured (lavender)
+  is character-based: the `►` caret, a surface fill, or a recoloured (lavender)
   border. A list longer than its container is **paged by the keyboard** — focus
   moves, the window follows (`List height` / `useListWindow`), with `▴ N more` /
   `▾ N more` as the only affordance. That is not mouse-scroll; it is how the
@@ -154,6 +161,39 @@ Terse, lowercase, command-shaped — like output from a well-engineered CLI.
 Second person imperative ("press `?` for help"). No exclamation marks. State,
 then action (`3 changes  ↳ press a to apply`). `UPPER CASE` is reserved for KEY
 indicators.
+
+### intent, not style
+
+The single API rule, and what keeps every blink app on-style for free: **the
+consumer chooses the intent; blink owns the style.** A component never accepts a
+raw glyph, a raw colour, or a shape name — it accepts a *semantic* prop, and the
+framework resolves the glyph, colour, border, and spacing from the house tokens.
+
+```tsx
+// ✗ style leaking into the API — the consumer paints pixels
+<Pane variant="double" />
+<List rows={[{ id, glyph: '✓', glyphColor: t.stateOk, domainColor: '#89b4fa' }]} />
+<Banner glyph="✓" color="green" />
+
+// ✓ intent only — the framework decides how it looks
+<Pane tone="focus" />
+<List rows={[{ id, state: 'installed', domain: 'postgresql', selected: true }]} />
+<Banner tone="success" />
+```
+
+| concern            | intent prop (consumer)                       | blink owns (framework)                       |
+|--------------------|----------------------------------------------|----------------------------------------------|
+| pane emphasis      | `tone` = `resting \| focus \| error`         | border + title colour; rounded shape         |
+| row / detail status| `state` = `installed \| missing \| drift \| pending \| …` | the glyph (`✓ ✗ ◐ ◯ ⚠ ↻`) + its colour |
+| selection          | `selected` / `locked` (bool)                 | `☑ / ☐ / ▣` + colour                          |
+| domain icon        | `domain` = a registered NAME                 | the glyph + its colour (owned at registration) |
+| notice severity    | `tone` = `info \| success \| warn`           | leading glyph + colour                       |
+| de-emphasis        | `muted` (bool)                               | which grey tier                              |
+
+If you find yourself wanting to pass a hex value or a glyph character into a
+component, it's missing an *intent* — add the intent, don't open a style hole.
+The maps live centrally in `glyphs.ts` (`stateGlyph()`, `selectionIntents`, and
+the registry's per-entry `color`).
 
 ---
 
@@ -183,14 +223,21 @@ is text-shaped fallbacks (`[x]`, `pg`), never broken boxes.
 | `detectIconSet(opts?)` | resolve `'nerd' \| 'unicode' \| 'ascii'` (env → user pref → font marker → terminal hints → CI → default) |
 | `useGlyph()` | `(name) => string`, bound to the icon set in context |
 | `glyph(name, set)` | low-level resolver |
-| `registerGlyphs({...})` | add app-domain glyphs (e.g. your product's logos) |
+| `registerGlyphs({...})` | register app-domain glyphs (each may carry its own `color`); also takes the `COMMON_DOMAINS` pack |
+| `glyph(name, set)` / `glyphColor(name)` | resolve a registered glyph / its owned colour |
+| `stateGlyph(name)` | the intent map: a state name → `{ glyph, token }` (what `List`/`DescriptionList` use) |
+| `COMMON_DOMAINS` | optional convenience pack of dev-tool domain glyphs — opt in with `registerGlyphs(COMMON_DOMAINS)` |
 | `boxChars`, `spinnerFor`, `blocks`, `blocksH` | border sets, spinner frames, block-shade ramp, eighth-block ramp (for `ProgressBar`) |
 | `cellWidth(str)` | terminal cell width — the same measure `List`/`Footer` use, so custom rows align exactly |
 
-Built-in names: states `check cross circle half checkboxOn checkboxOff warn
-rerun`; nav `focus collapsed expanded depends flow back moreAbove moreBelow`;
-domains `database mysql postgresql redis docker github git ssh nodejs php python
-vim apple linux ubuntu font ai bolt`.
+**Core vs content.** blink core ships only the *contract* glyphs and seeds the
+registry with them — states (`check cross circle half checkboxOn checkboxOff
+checkboxLock warn rerun`) and nav (`focus collapsed expanded depends flow back
+moreAbove moreBelow`). **Domain glyphs are app content, not core** — blink ships
+none. An app registers its own at boot (`registerGlyphs({ laravel: {...} })`), or
+opts into `COMMON_DOMAINS` (`database mysql postgresql redis docker github git ssh
+nodejs php python vim apple linux ubuntu font ai bolt`). There is **no double-line
+border** in `boxChars` — the house style is single-line rounded only.
 
 Override env vars: `BLINK_ICON_SET=nerd|unicode|ascii`, `BLINK_NERD_FONT=1|0`,
 `BLINK_ASCII=1`.
@@ -199,13 +246,15 @@ Override env vars: `BLINK_ICON_SET=nerd|unicode|ascii`, `BLINK_NERD_FONT=1|0`,
 
 | component | what |
 |---|---|
-| `Pane` | box-drawn rectangle with a title inside the top border; `focused`/`variant` drive weight + colour |
-| `List` / `ListRow` | rows with `▸` focus caret, state + domain glyphs, right-aligned meta, selection fill; set `height` to window a long list |
+| `Pane` | box-drawn rectangle with a title inside the top border; `tone` (`resting`/`focus`/`error`) drives the colour — one rounded shape |
+| `List` / `ListRow` | rows declared by **intent** (`state`, `selected`/`locked`, `domain` name, `muted`) with `►` focus caret, right-aligned meta, full-row selection fill; set `height` to window a long list |
+| `Header` | the one-row top status bar — accent mark + title (`· subtitle`) + a right status slot |
+| `DescriptionList` | key/value block for a detail pane; rows take intent (`state`, `muted`), aligned to a gutter |
 | `LogView` | bottom-anchored, height-bounded tail of a growing line stream (subprocess output, build logs); `follow`/`wrap` |
 | `Footer` | the always-visible bottom hotkey bar; inverse-video key chips + a right status slot |
-| `Input` / `Cursor` | single-line field with the blinking `▎` cursor (presentational — wire keys with Ink's `useInput`) |
-| `Dialog` | centred double-border modal; plain-text `lines` or a rich `children` body; the primary action renders in inverse-accent |
-| `Banner` | one-line, non-blocking in-flow notice; `tone` (`info`/`warn`/`success`) + optional glyph |
+| `Input` / `Cursor` | single-line field with the blinking `▎` cursor (presentational — wire keys with Ink's `useInput`); derives its `tone` from `focused`/`error` |
+| `Dialog` | centred rounded (lavender) modal; `tone` (`default`/`error`); plain-text `lines` or a rich `children` body; the primary action renders in inverse-accent |
+| `Banner` | one-line, non-blocking in-flow notice; `tone` (`info`/`success`/`warn`) — the framework owns the glyph |
 | `Spinner` | braille spinner (ASCII fallback), driven by `useSpinnerFrame` |
 | `ProgressBar` | determinate bar from the eighth-block ramp; `value` (0..1) + `width` |
 
@@ -253,9 +302,10 @@ ship — press `q` inside one to return to the menu:
 - **svcd** (`examples/svcd.tsx`) — the narrative reference app, a services
   manager that reads like a real tool (Pane · List · Footer · Input · Dialog ·
   Spinner).
-- **gallery** (`examples/gallery.tsx`) — the kitchen sink: every primitive on
-  one screen, driven by the headless `useList*` hooks (windowed List · LogView ·
-  Banner · ProgressBar · selection/navigation/windowing hooks).
+- **showcase** (`examples/showcase.tsx`) — the kitchen sink: every primitive on
+  one screen, each region labelled with the `‹component›` it demonstrates, all
+  driven by the intent-not-style API (Header · Banner · DescriptionList · Pane
+  tones · List · Input · Dialog · Spinner · ProgressBar).
 
 ## license
 

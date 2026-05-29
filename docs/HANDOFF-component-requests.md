@@ -1,5 +1,13 @@
 # Handoff — component requests from a downstream consumer
 
+> **⚠ Superseded (historical).** Written before the *intent, not style*
+> migration. The current contract is in the root `README.md` and
+> `design-reference/`: components take semantic intent (`tone`, `state`,
+> `selected`, `domain` name), there is **no double-line border** (focus/modals
+> are colour, not weight), and domain glyphs are **app-registered**, not core.
+> API snippets below (`Pane variant`/`double`, `Dialog variant`, etc.) are the
+> pre-migration shapes — kept for provenance, not as current truth.
+>
 > **Status:** request / design input. Nothing here is implemented.
 > **Audience:** whoever creates or changes blink primitives.
 > **Prime directive:** every primitive proposed below **must stay generic and

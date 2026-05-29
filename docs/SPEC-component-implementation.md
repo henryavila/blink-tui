@@ -1,5 +1,12 @@
 # Spec — component implementation (maintainer design pass)
 
+> **⚠ Superseded (historical).** Written before the *intent, not style*
+> migration. For the current API see the root `README.md` and `design-reference/`:
+> `Pane`/`Dialog` take `tone` (no `variant`/`double` — there is no double border),
+> `List`/`DescriptionList` rows take intent (`state`, `selected`, `domain` name),
+> and domain glyphs are app-registered, not core. The `variant`/`double` shapes
+> below are pre-migration and kept only for provenance.
+>
 > **Status:** implementable spec. This is the maintainer's design pass over
 > `HANDOFF-component-requests.md` — it resolves the two open decisions and turns
 > each request into an API + behaviour + tests an engineer can build against.
