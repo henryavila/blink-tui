@@ -7,30 +7,54 @@
  */
 
 // ─── Theme ───────────────────────────────────────────────────────────────────
-export { catppuccinMocha } from './theme/palette.js';
+export {
+  catppuccinMocha,
+  palettes,
+  neutral,
+  nord,
+  gruvbox,
+  tokyonight,
+  latte,
+  PALETTE_SLOTS,
+} from './theme/palette.js';
 export type { Palette, PaletteColor } from './theme/palette.js';
-export { mochaTokens } from './theme/tokens.js';
+export { mochaTokens, buildTokens } from './theme/tokens.js';
 export type { SemanticTokens } from './theme/tokens.js';
-export { mocha, defaultTheme } from './theme/theme.js';
-export type { Theme } from './theme/theme.js';
+export {
+  mocha,
+  defaultTheme,
+  getTheme,
+  hasTheme,
+  allThemes,
+  listThemes,
+  registerTheme,
+} from './theme/theme.js';
+export type { Theme, ThemeMeta, ThemeMode, ThemeDefinition } from './theme/theme.js';
 export {
   ThemeProvider,
   useBlink as useBlinkContext,
   useTheme,
   useTokens,
   useIconSet,
+  useThemeControls,
 } from './theme/context.js';
-export type { ThemeProviderProps, BlinkContextValue } from './theme/context.js';
+export type {
+  ThemeProviderProps,
+  BlinkContextValue,
+  ThemeControls,
+} from './theme/context.js';
 
 // ─── Glyphs ────────────────────────────────────────────────────────────────────
 export {
   stateGlyphs,
   navGlyphs,
-  COMMON_DOMAINS,
   glyph,
   glyphColor,
   registerGlyphs,
+  registerGlyph,
   hasGlyph,
+  registeredNames,
+  deriveAscii,
   stateGlyph,
   stateIntents,
   selectionIntents,
@@ -40,6 +64,29 @@ export {
   spinnerFor,
   blocks,
   blocksH,
+  DEFAULT_GLYPH_COLOR,
+  DEFAULT_UNICODE,
+  // Tier 1 + Tier 2 packs (content — opt in with registerGlyphs)
+  COMMON_DOMAINS,
+  LANGUAGES,
+  DATABASES,
+  CLOUD,
+  EDITORS,
+  OS,
+  COMPANIES,
+  FRAMEWORKS,
+  FILES,
+  SOCIAL,
+  ACTIONS,
+  PACKAGES,
+  GLYPH_PACKS,
+  // Tier 3 raw index (escape hatch)
+  nf,
+  nfHas,
+  nfChar,
+  registerNerdIndex,
+  NERD_INDEX,
+  NERD_INDEX_SOURCES,
 } from './glyphs/glyphs.js';
 export type {
   BuiltinGlyphName,
@@ -49,11 +96,12 @@ export type {
   SelectionName,
   BoxChars,
   BoxStyleName,
+  GlyphInput,
 } from './glyphs/glyphs.js';
 export { useGlyph } from './glyphs/useGlyph.js';
 export { detectIconSet } from './glyphs/detect.js';
 export type { DetectOptions } from './glyphs/detect.js';
-export type { IconSet, GlyphVariants } from './glyphs/types.js';
+export type { IconSet, GlyphVariants, GlyphColor } from './glyphs/types.js';
 
 // ─── Utilities ─────────────────────────────────────────────────────────────────
 export { cellWidth } from './textWidth.js';

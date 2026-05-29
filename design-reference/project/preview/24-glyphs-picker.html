@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — Glyph picker</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .card { gap: 7px; overflow: hidden; }
+  /* search line — no CSS border; the box is drawn, the input is bare */
+  .find { display: flex; align-items: center; gap: 1ch; background: var(--bg-elevated); padding: 4px 10px; }
+  .find .pr { color: var(--accent); }
+  .find input {
+    flex: 1; background: transparent; border: 0; outline: 0; margin: 0; padding: 0;
+    color: var(--fg); font-family: var(--font-mono); font-size: var(--fs-base);
+    letter-spacing: 0;
+  }
+  .find input::placeholder { color: var(--fg-disabled); }
+  .find .ct { color: var(--fg-faint); font-size: 12px; white-space: nowrap; }
+  .find .ld { color: var(--accent); font-size: 12px; white-space: nowrap; cursor: default; }
+  .find .ld.done { color: var(--state-ok); cursor: default; }
+  .results { flex: 1; min-height: 0; overflow: hidden; }
+  .rgrid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px 6px; }
+  .rcell { display: flex; align-items: baseline; gap: 1ch; padding: 3px 8px; background: var(--bg-elevated); white-space: nowrap; cursor: default; }
+  .rcell.sel { background: var(--bg-inverse); }
+  .rcell.sel .l, .rcell.sel .tg { color: var(--ctp-base); }
+  .rcell .g { font-size: 16px; line-height: 1; width: 1.5ch; flex-shrink: 0; }
+  .rcell .l { font-size: 11px; color: var(--fg); overflow: hidden; text-overflow: ellipsis; }
+  .rcell .tg { font-size: 10px; color: var(--fg-faint); margin-left: auto; }
+  .more { color: var(--fg-faint); font-size: 11px; padding: 2px 2px; }
+  .snip { white-space: pre; background: var(--bg-elevated); padding: 6px 10px; color: var(--fg-muted); font-size: 12px; min-height: 18px; }
+  .snip .fn { color: var(--accent); } .snip .str { color: var(--state-ok); }
+  .snip .ph { color: var(--fg-disabled); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="cap">picker · search every registered + indexed glyph by name · click one to get its registration snippet</div>
+  <div class="find">
+    <span class="pr">▶</span>
+    <input id="q" type="text" placeholder="type to filter… (e.g. data, git, cloud, py)" autocomplete="off" spellcheck="false">
+    <span class="ct" id="ct"></span>
+    <span class="ld" id="load"></span>
+  </div>
+  <div class="results"><div class="rgrid" id="grid"></div><div class="more" id="more"></div></div>
+  <div class="snip" id="snip"><span class="ph">click a glyph to copy its register / resolve snippet</span></div>
+</div>
+
+<script src="../ui_kits/tui_app/glyphs.js"></script>
+<script src="../ui_kits/tui_app/glyph-index.js"></script>
+<script src="../ui_kits/tui_app/glyph-packs.js"></script>
+<script>
+  // point the lazy-loader at the generated full index (relative to this card)
+  window.setGlyphIndexUrl("../ui_kits/tui_app/glyph-index.full.json");
+
+  const grid = document.getElementById("grid");
+  const more = document.getElementById("more");
+  const ct = document.getElementById("ct");
+  const load = document.getElementById("load");
+  const snip = document.getElementById("snip");
+  const q = document.getElementById("q");
+  const CAP = 54;
+  let selected = null;
+  let items = [];
+
+  // ── build the combined searchable catalogue (rebuilt after a lazy load) ───
+  function buildItems() {
+    items = [];
+    const seen = new Set();
+    function addCurated(packName, packVar, map) {
+      for (const name in map) {
+        if (seen.has(name)) continue;
+        seen.add(name);
+        const e = map[name];
+        items.push({ name: name, char: e.nerd, color: e.color, tier: packName, packVar: packVar });
+      }
+    }
+    addCurated("common", "COMMON_DOMAINS", window.COMMON_DOMAINS);
+    for (const cat in window.GLYPH_PACKS) addCurated(cat, cat.toUpperCase(), window.GLYPH_PACKS[cat]);
+    for (const name in window.NERD_INDEX) {
+      const short = name.split("-").slice(1).join("-") || name;
+      items.push({ name: name, char: window.nf(name), color: "var(--fg-muted)", tier: "index", short: short });
+    }
+  }
+
+  function snippetHTML(it) {
+    if (it.tier === "index") {
+      return '<span class="fn">registerGlyphs</span>({ ' + it.short +
+        ': { <span class="fn">nf</span>: <span class="str">\'' + it.name + '\'</span> } })';
+    }
+    return '<span class="fn">registerGlyphs</span>(' + it.packVar +
+      ')  ·  <span class="fn">glyph</span>(<span class="str">\'' + it.name + '\'</span>)';
+  }
+
+  function render() {
+    const term = q.value.trim().toLowerCase();
+    const matches = term === "" ? items : items.filter(function (it) { return it.name.toLowerCase().indexOf(term) !== -1; });
+    grid.innerHTML = "";
+    matches.slice(0, CAP).forEach(function (it) {
+      const cell = document.createElement("div");
+      cell.className = "rcell";
+      const g = document.createElement("span"); g.className = "g"; g.textContent = it.char; g.style.color = it.color;
+      const l = document.createElement("span"); l.className = "l"; l.textContent = it.name;
+      const tg = document.createElement("span"); tg.className = "tg"; tg.textContent = it.tier;
+      cell.appendChild(g); cell.appendChild(l); cell.appendChild(tg);
+      cell.addEventListener("click", function () {
+        if (selected) selected.classList.remove("sel");
+        cell.classList.add("sel"); selected = cell;
+        snip.innerHTML = snippetHTML(it);
+      });
+      grid.appendChild(cell);
+    });
+    ct.textContent = matches.length + (matches.length === 1 ? " match · " : " matches · ") + items.length + " total";
+    more.textContent = matches.length > CAP ? "▾ " + (matches.length - CAP) + " more · refine search" : "";
+  }
+
+  function setLoadLabel() {
+    if (window.isGlyphIndexLoaded()) { load.textContent = "✓ full index loaded"; load.classList.add("done"); }
+    else { load.textContent = "▾ press l · load full index"; load.classList.remove("done"); }
+  }
+  function doLoad() {
+    if (window.isGlyphIndexLoaded()) return;
+    load.textContent = "↻ loading…";
+    window.loadGlyphIndex().then(function () { buildItems(); render(); setLoadLabel(); })
+      .catch(function () { load.textContent = "✗ load failed"; });
+  }
+  load.addEventListener("click", doLoad);
+  // a sync nf() miss auto-loads in the background too — reflect it when it lands
+  window.onGlyphIndex(function () { buildItems(); render(); setLoadLabel(); });
+
+  q.addEventListener("input", render);
+  window.addEventListener("keydown", function (e) {
+    if (document.activeElement === q) { if (e.key === "Escape") { q.value = ""; render(); q.blur(); } return; }
+    if (e.key === "/") { e.preventDefault(); q.focus(); }
+    else if (e.key === "l") { e.preventDefault(); doLoad(); }
+    else if (e.key === "Escape") { q.value = ""; render(); }
+  });
+
+  buildItems(); render(); setLoadLabel();
+</script>
+</body>
+</html>

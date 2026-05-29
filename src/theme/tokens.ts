@@ -1,11 +1,16 @@
-import { catppuccinMocha as c } from './palette.js';
+import type { Palette } from './palette.js';
+import { neutral } from './palette.js';
 
 /**
- * Semantic tokens — the layer components actually consume.
+ * Semantic tokens — the layer components actually consume (LAYER 2 of the
+ * theming contract).
  *
- * A 1:1 port of the `--*` custom properties in the blink design system's
- * `colors_and_type.css`. Mapping roles (not raw hues) to colours is what lets
- * a future light theme drop in without touching a single component.
+ * A 1:1 port of the intent `--*` custom properties in the design system's
+ * `colors_and_type.css`. Each token maps a *role* ("focus", "an error", "a
+ * postgres row") onto a palette slot. This grammar is **identical for every
+ * theme** — only the palette underneath it changes — which is what lets a
+ * component recolour for free when the surface theme flips. A component never
+ * sees a palette name and has no colour prop.
  *
  * In a terminal there is no CSS background; `bg*` tokens are applied via Ink's
  * `backgroundColor` prop (used sparingly — selection fills, inverse hotkeys)
@@ -27,7 +32,7 @@ export interface SemanticTokens {
   fgDim: string; // tertiary, hints
   fgFaint: string; // labels, captions
   fgDisabled: string; // disabled items, separators
-  fgInverse: string; // text on bgInverse
+  fgInverse: string; // text on bgInverse / on an accent fill (always the palette base)
 
   // Borders (rendered as glyphs — these colour the glyphs themselves)
   border: string; // default pane border
@@ -47,38 +52,71 @@ export interface SemanticTokens {
   statePending: string;
   stateDrift: string;
   stateInfo: string;
+
+  // Domain families — brand/domain glyphs paint through a HUE FAMILY, never a
+  // raw colour, so e.g. postgres stays "blue family" and recolours harmonically
+  // with the active theme. A glyph entry's `color` is one of these token keys.
+  domainBlue: string;
+  domainAzure: string;
+  domainCyan: string;
+  domainGreen: string;
+  domainRed: string;
+  domainAmber: string;
+  domainYellow: string;
+  domainViolet: string;
+  domainNeutral: string;
 }
 
-/** Catppuccin Mocha semantic token mapping. */
-export const mochaTokens: SemanticTokens = {
-  bg: c.base,
-  bgElevated: c.mantle,
-  bgSunken: c.crust,
-  bgPanel: c.base,
-  bgSelected: c.surface0,
-  bgFocused: c.surface1,
-  bgInverse: c.text,
+/**
+ * Build the default intent mapping for a palette. This is LAYER 2 of the
+ * contract — the role→slot grammar that never moves between themes. A theme is
+ * just `buildTokens(itsPalette)`, optionally with a few intent overrides layered
+ * on top (see `theme.ts`).
+ */
+export function buildTokens(p: Palette): SemanticTokens {
+  return {
+    bg: p.base,
+    bgElevated: p.mantle,
+    bgSunken: p.crust,
+    bgPanel: p.base,
+    bgSelected: p.surface0,
+    bgFocused: p.surface1,
+    bgInverse: p.text,
 
-  fg: c.text,
-  fgMuted: c.subtext1,
-  fgDim: c.subtext0,
-  fgFaint: c.overlay1,
-  fgDisabled: c.overlay0,
-  fgInverse: c.base,
+    fg: p.text,
+    fgMuted: p.subtext1,
+    fgDim: p.subtext0,
+    fgFaint: p.overlay1,
+    fgDisabled: p.overlay0,
+    fgInverse: p.base,
 
-  border: c.surface1,
-  borderFocus: c.lavender,
-  borderStrong: c.overlay0,
+    border: p.surface1,
+    borderFocus: p.lavender,
+    borderStrong: p.overlay0,
 
-  accent: c.lavender,
-  accentAlt: c.mauve,
-  link: c.blue,
-  highlight: c.yellow,
+    accent: p.lavender,
+    accentAlt: p.mauve,
+    link: p.blue,
+    highlight: p.yellow,
 
-  stateOk: c.green,
-  stateErr: c.red,
-  stateWarn: c.yellow,
-  statePending: c.overlay1,
-  stateDrift: c.peach,
-  stateInfo: c.sky,
-};
+    stateOk: p.green,
+    stateErr: p.red,
+    stateWarn: p.yellow,
+    statePending: p.overlay1,
+    stateDrift: p.peach,
+    stateInfo: p.sky,
+
+    domainBlue: p.blue,
+    domainAzure: p.sapphire,
+    domainCyan: p.sky,
+    domainGreen: p.green,
+    domainRed: p.red,
+    domainAmber: p.peach,
+    domainYellow: p.yellow,
+    domainViolet: p.mauve,
+    domainNeutral: p.subtext1, // == --fg-muted
+  };
+}
+
+/** Catppuccin Mocha (neutral) semantic tokens — kept as a named export. */
+export const mochaTokens: SemanticTokens = buildTokens(neutral);

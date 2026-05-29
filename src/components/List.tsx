@@ -136,10 +136,14 @@ export function ListRow({
   const stateColor = row.muted ? tokens.fgDim : st ? tokens[st.token] : tokens.fg;
 
   const domainStr = row.domain ? g(row.domain) : '';
+  // Domain colour is intent, not style: the glyph entry owns a hue-family token
+  // (e.g. `domainBlue`); we resolve it through the active theme so a postgres row
+  // recolours with the surface instead of carrying a baked hex.
+  const domainToken = row.domain ? glyphColor(row.domain) : undefined;
   const domainColor = row.muted
     ? tokens.fgDim
-    : row.domain
-      ? glyphColor(row.domain) ?? tokens.fgMuted
+    : domainToken
+      ? tokens[domainToken]
       : tokens.fgMuted;
 
   const labelColor = row.muted ? tokens.fgDim : tokens.fg;

@@ -45,6 +45,7 @@ test('footer is single-line under the ascii icon set', () => {
   expect(frame).toContain('/');
   expect(frame).toContain('search');
   expect(frame).toContain('1 of 1');
-  // hotkey bar is one cell tall by contract — no wrap onto a second row.
-  expect(frame.split('\n')).toHaveLength(1);
+  // hotkey bar is one cell tall by contract — no wrap onto a second row. (The
+  // house top-margin adds a blank line above it, so count only content rows.)
+  expect(frame.split('\n').filter((l) => l.trim() !== '')).toHaveLength(1);
 });

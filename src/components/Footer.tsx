@@ -17,6 +17,11 @@ export interface FooterProps {
   keys?: HotkeyDef[];
   /** Optional status node, flush-right in faint text (e.g. `'6 of 8'`). */
   right?: React.ReactNode;
+  /**
+   * Cells of breathing room above the bar. House default is `1` so the footer
+   * never butts up against the content above it; pass `0` to pin it flush.
+   */
+  marginTop?: number;
 }
 
 /**
@@ -56,7 +61,7 @@ function chipWidth(h: HotkeyDef): number {
  * inverse hotkey chips are filled. The padding cells stay unfilled, matching
  * how a terminal status bar reads.
  */
-export function Footer({ keys = [], right }: FooterProps): React.ReactElement {
+export function Footer({ keys = [], right, marginTop = 1 }: FooterProps): React.ReactElement {
   const tokens = useTokens();
   const { columns } = useStdoutDimensions();
 
@@ -76,7 +81,7 @@ export function Footer({ keys = [], right }: FooterProps): React.ReactElement {
   }
 
   return (
-    <Box flexDirection="row" paddingX={1} justifyContent="space-between">
+    <Box flexDirection="row" paddingX={1} justifyContent="space-between" marginTop={marginTop} flexShrink={0}>
       <Box flexDirection="row" gap={3} flexShrink={1} overflow="hidden">
         {shown.map((h, i) => (
           <Hotkey key={i} k={h.k} desc={h.desc} />

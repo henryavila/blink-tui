@@ -2,50 +2,69 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>blink — Glyph registry</title>
+<title>blink — Glyph system</title>
 <link rel="stylesheet" href="../colors_and_type.css">
 <link rel="stylesheet" href="preview.css">
 <style>
-  .card { gap: 8px; }
-  .glyph-grid { grid-template-columns: repeat(9, 1fr); gap: 4px 8px; }
-  .glyph-cell { padding: 4px 0; }
-  .glyph-cell .g { font-size: 20px; }
-  .glyph-cell .lbl { font-size: 10px; }
+  .card { gap: 9px; overflow: hidden; }
+  .tiers { display: flex; flex-direction: column; gap: 3px; }
+  .tier {
+    display: grid; grid-template-columns: 8ch 14ch 1fr 12ch;
+    column-gap: 2ch; align-items: baseline;
+    background: var(--bg-elevated); padding: 5px 10px;
+  }
+  .tier .t  { color: var(--accent); }
+  .tier .nm { color: var(--fg); }
+  .tier .ds { color: var(--fg-dim); font-size: 12px; }
+  .tier .co { color: var(--fg-faint); font-size: 12px; text-align: right; }
+  .tier.contract .co { color: var(--state-ok); }
   .api {
     white-space: pre; background: var(--bg-elevated);
-    padding: 8px 10px; color: var(--fg-muted); font-size: 12px; line-height: 1.5;
+    padding: 8px 10px; color: var(--fg-muted); font-size: 12px; line-height: 1.55;
   }
   .api .fn { color: var(--accent); }
   .api .str { color: var(--state-ok); }
+  .api .cm { color: var(--fg-faint); }
+  .chain { color: var(--fg-dim); font-size: 12px; }
+  .chain b { color: var(--fg); font-weight: 400; }
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="cap">domain glyphs are app CONTENT, not framework contract · blink core ships none · the app registers its own at boot</div>
-  <div class="api"><span class="fn">registerGlyphs</span>({ laravel: { nerd: <span class="str">'\ue73f'</span>, unicode: <span class="str">'◆'</span>, ascii: <span class="str">'[la]'</span> } })
-<span class="fn">glyph</span>(<span class="str">'laravel'</span>) → resolves for the active icon set · nerd → unicode → ascii</div>
-  <div class="cap">optional convenience pack · COMMON_DOMAINS · opt in with registerGlyphs(COMMON_DOMAINS) · extend or override freely</div>
-  <div class="glyph-grid">
-    <div class="glyph-cell"><div class="g"></div><div class="lbl">database</div></div>
-    <div class="glyph-cell"><div class="g" style="color:var(--ctp-sapphire)"></div><div class="lbl">mysql</div></div>
-    <div class="glyph-cell"><div class="g" style="color:var(--ctp-blue)"></div><div class="lbl">postgres</div></div>
-    <div class="glyph-cell"><div class="g" style="color:var(--ctp-red)"></div><div class="lbl">redis</div></div>
-    <div class="glyph-cell"><div class="g" style="color:var(--ctp-sky)"></div><div class="lbl">docker</div></div>
-    <div class="glyph-cell"><div class="g"></div><div class="lbl">github</div></div>
-    <div class="glyph-cell"><div class="g" style="color:var(--ctp-peach)"></div><div class="lbl">git</div></div>
-    <div class="glyph-cell"><div class="g"></div><div class="lbl">ssh</div></div>
-    <div class="glyph-cell"><div class="g" style="color:var(--ctp-green)"></div><div class="lbl">node</div></div>
-    <div class="glyph-cell"><div class="g" style="color:var(--ctp-mauve)"></div><div class="lbl">php</div></div>
-    <div class="glyph-cell"><div class="g" style="color:var(--ctp-yellow)"></div><div class="lbl">python</div></div>
-    <div class="glyph-cell"><div class="g" style="color:var(--ctp-green)"></div><div class="lbl">vim</div></div>
-    <div class="glyph-cell"><div class="g"></div><div class="lbl">apple</div></div>
-    <div class="glyph-cell"><div class="g" style="color:var(--ctp-yellow)"></div><div class="lbl">linux</div></div>
-    <div class="glyph-cell"><div class="g" style="color:var(--ctp-peach)"></div><div class="lbl">ubuntu</div></div>
-    <div class="glyph-cell"><div class="g"></div><div class="lbl">font</div></div>
-    <div class="glyph-cell"><div class="g" style="color:var(--ctp-lavender)"></div><div class="lbl">ai</div></div>
-    <div class="glyph-cell"><div class="g" style="color:var(--ctp-yellow)"></div><div class="lbl">bolt</div></div>
+  <div class="cap">the glyph system · the CONTRACT is owned by blink · all CONTENT is opt-in, registered by the app</div>
+
+  <div class="tiers">
+    <div class="tier contract">
+      <span class="t">tier 0</span><span class="nm">contract</span>
+      <span class="ds">states · nav · box · spinner — appear in every blink app, never change</span>
+      <span class="co">always on</span>
+    </div>
+    <div class="tier">
+      <span class="t">tier 1</span><span class="nm">common pack</span>
+      <span class="ds">COMMON_DOMAINS · ~18 dev-tool domains, fully curated</span>
+      <span class="co">opt-in</span>
+    </div>
+    <div class="tier">
+      <span class="t">tier 2</span><span class="nm">category</span>
+      <span class="ds">languages · databases · cloud · editors · os · companies — import only what you use</span>
+      <span class="co">opt-in</span>
+    </div>
+    <div class="tier">
+      <span class="t">tier 3</span><span class="nm">raw index</span>
+      <span class="ds">whole Nerd Font, name→codepoint · no fallback, default colour, nerd-only</span>
+      <span class="co">escape hatch</span>
+    </div>
   </div>
-  <div class="cap">a glyph that only one app needs (laravel, tailscale, syncthing) stays in that app · never added to core</div>
+
+  <div class="cap">registration · two forms, both supported · colour + fallbacks are filled from house defaults when omitted</div>
+  <div class="api"><span class="cm">// verbose — full curation, self-contained</span>
+<span class="fn">registerGlyphs</span>({ laravel: { nerd: <span class="str">'\ue73f'</span>, unicode: <span class="str">'◆'</span>, ascii: <span class="str">'[la]'</span>, color: <span class="str">'var(--ctp-red)'</span> } })
+
+<span class="cm">// easy — codepoint from the index, fallbacks + colour defaulted</span>
+<span class="fn">registerGlyphs</span>({ laravel: { nf: <span class="str">'dev-laravel'</span>, color: <span class="str">'var(--ctp-red)'</span> } })
+<span class="fn">glyph</span>(<span class="str">'laravel'</span>) <span class="cm">→ resolves for the active icon set</span></div>
+
+  <div class="chain">resolution · <b>nerd → unicode → ascii</b> (degrades, never tofu) · uncurated colour defaults to <b>--fg-muted</b> · the consumer expresses intent (<b>state</b>, <b>domain</b>), blink owns glyph + colour</div>
 </div>
 </body>
 </html>

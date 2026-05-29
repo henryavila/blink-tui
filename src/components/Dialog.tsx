@@ -79,7 +79,7 @@ export function Dialog({
               {actions.map((action, i) => (
                 <Box key={i} flexDirection="row" gap={1}>
                   {action.primary ? (
-                    <Text color={tokens.bg} backgroundColor={tokens.accent}>
+                    <Text color={tokens.fgInverse} backgroundColor={tokens.accent}>
                       {' ' + action.key + ' '}
                     </Text>
                   ) : (

@@ -1,19 +1,20 @@
 /**
- * showcase — every blink component on one screen, the live ComponentsShowcase.
+ * showcase — the blink INVENTORY, adapted for the terminal.
  *
- * The "kitchen sink": a labelled `‹Component›` tour of the whole primitive set,
- * all on a single screen and all driven by the **intent, not style** API — rows
- * declare `state` / `domain` / `selected` by name and the framework paints them.
- * It dogfoods the new chrome primitives (`Header` as the top bar, `Banner` as the
- * in-flow notice, `DescriptionList` as the detail pane) alongside `Pane` tones,
- * `List`, `Input`, `Dialog`, `Spinner`, `ProgressBar`, and the glyph banks.
+ * A TUI port of the design system's "Component Showcase": one long, *scrolling*
+ * page that exercises every token, glyph tier, and component primitive — plus a
+ * live theme picker. The web page scrolls with the wheel; a TUI has no wheel, so
+ * this adapts it to a keyboard-paged viewport (a fixed window over a tall content
+ * column, clipped with overflow + a negative offset). Everything is driven by the
+ * intent, not style API and recolours instantly when you switch theme.
  *
  * Run it: `npm run example` → pick "showcase" (or `npx tsx examples/showcase.tsx`).
- * Keys: ↑↓/j k move · space select · / search · d delete · e error · ? help · q quit
+ * Keys: ↑↓/j k scroll · space/b page · g/G top/bottom · t/T theme · ? help · q quit
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Writable } from 'node:stream';
-import { render, Box, Text, useApp, useInput } from 'ink';
+import { render, Box, Text, measureElement, useApp, useInput } from 'ink';
+import type { DOMElement } from 'ink';
 import {
   ThemeProvider,
   detectIconSet,
@@ -31,87 +32,56 @@ import {
   useTokens,
   useGlyph,
   useStdoutDimensions,
+  useThemeControls,
   registerGlyphs,
   COMMON_DOMAINS,
-  catppuccinMocha as ctp,
+  GLYPH_PACKS,
+  blocks,
+  type SemanticTokens,
+  type GlyphVariants,
   type ListRowData,
   type DescriptionItem,
 } from '../src/index.js';
 
-// blink core ships no domain glyphs; this showcase opts into the common pack —
-// exactly as a real product would at boot (the framework owns the mechanism, the
-// app owns the content).
+// blink core ships no domain glyphs; the inventory opts into the Tier 1 pack —
+// exactly as a real product would at boot (framework owns the mechanism, the app
+// owns the content). The Tier 2 packs are read straight from GLYPH_PACKS for the
+// category grid below; they're documentation there, so they need no registration.
 registerGlyphs(COMMON_DOMAINS);
 
-// ── specimen data — intent only: state + domain NAMES, never glyphs/colours ──
-interface Proc {
-  id: string;
-  domain: string;
+const CLAMP = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));
+
+// ── small specimen helpers — composed from primitives, contract-clean ──────────
+
+/** Section heading: an inverse-video bar (the TUI "h1") + a dim subtitle line. */
+function SectionTitle({ title, sub }: { title: string; sub?: string }): React.ReactElement {
+  const t = useTokens();
+  return (
+    <Box flexDirection="column" marginTop={1}>
+      <Box>
+        <Text color={t.fgInverse} backgroundColor={t.bgInverse}>{' ' + title + ' '}</Text>
+      </Box>
+      {sub ? <Text color={t.fgFaint} wrap="truncate">{sub}</Text> : null}
+    </Box>
+  );
+}
+
+/** One glyph in a fixed cell + its name — the legend/bank atom. */
+function GlyphCell({
+  name,
+  label,
+  color,
+  width = 16,
+}: {
   name: string;
-  state: string;
-  meta: string;
-}
-const PROCS: Proc[] = [
-  { id: 'pg', domain: 'postgresql', name: 'postgres@14.10', state: 'installed', meta: ':5432' },
-  { id: 'redis', domain: 'redis', name: 'redis@7.2', state: 'installed', meta: ':6379' },
-  { id: 'node', domain: 'nodejs', name: 'node · api', state: 'ok', meta: ':3000' },
-  { id: 'nginx', domain: 'ubuntu', name: 'nginx', state: 'drift', meta: 'drift' },
-  { id: 'graf', domain: 'database', name: 'grafana', state: 'missing', meta: 'missing' },
-  { id: 'ssh', domain: 'ssh', name: 'ssh-agent', state: 'pending', meta: 'idle' },
-];
-
-interface Task {
-  id: string;
   label: string;
-  sel: boolean;
-  exp?: 'open' | 'closed' | null;
-  child?: boolean;
-}
-const TASKS: Task[] = [
-  { id: 't1', label: 'pull latest images', sel: true, exp: null },
-  { id: 't2', label: 'run migrations', sel: true, exp: 'open' },
-  { id: 't3', label: '0001_init', sel: true, child: true },
-  { id: 't4', label: '0002_add_index', sel: false, child: true },
-  { id: 't5', label: 'restart services', sel: false, exp: 'closed' },
-  { id: 't6', label: 'tail logs', sel: false, exp: null },
-];
-
-// Glyph banks (the ‹useGlyph› pane). Names resolve per icon set; colours are the
-// framework's, shown here as a legend.
-const STATE_BANK: Array<{ name: string; token: keyof ReturnType<typeof useTokens> }> = [
-  { name: 'check', token: 'stateOk' },
-  { name: 'cross', token: 'stateErr' },
-  { name: 'circle', token: 'statePending' },
-  { name: 'half', token: 'stateDrift' },
-  { name: 'warn', token: 'stateWarn' },
-  { name: 'rerun', token: 'stateInfo' },
-  { name: 'checkboxOn', token: 'accent' },
-  { name: 'checkboxOff', token: 'fgDim' },
-];
-const NAV_BANK = ['focus', 'collapsed', 'expanded', 'depends', 'flow', 'back'];
-const DOMAIN_BANK: Array<{ name: string; label: string }> = [
-  { name: 'postgresql', label: 'pg' },
-  { name: 'redis', label: 'redis' },
-  { name: 'docker', label: 'docker' },
-  { name: 'git', label: 'git' },
-  { name: 'nodejs', label: 'node' },
-  { name: 'python', label: 'py' },
-  { name: 'ssh', label: 'ssh' },
-  { name: 'ai', label: 'ai' },
-];
-const ACCENTS: Array<{ color: string; label: string }> = [
-  { color: ctp.lavender, label: 'lavender — accent / focus / brand' },
-  { color: ctp.mauve, label: 'mauve — secondary brand' },
-  { color: ctp.blue, label: 'blue — link / refs' },
-  { color: ctp.yellow, label: 'yellow — highlight / match' },
-];
-
-// ── small specimen helpers — composed from primitives, contract-clean ──
-function GlyphCell({ name, label, color }: { name: string; label: string; color: string }): React.ReactElement {
+  color: string;
+  width?: number;
+}): React.ReactElement {
   const t = useTokens();
   const g = useGlyph();
   return (
-    <Box flexDirection="row" width={14}>
+    <Box width={width} flexShrink={0}>
       <Box width={3} flexShrink={0}>
         <Text color={color} wrap="truncate">{g(name)}</Text>
       </Box>
@@ -120,25 +90,54 @@ function GlyphCell({ name, label, color }: { name: string; label: string; color:
   );
 }
 
+/** A glyph drawn from a raw nerd char (pack data) + its name — for the pack grid. */
+function PackCell({ char, label, color }: { char: string; label: string; color: string }): React.ReactElement {
+  const t = useTokens();
+  return (
+    <Box width={15} flexShrink={0}>
+      <Box width={3} flexShrink={0}>
+        <Text color={color} wrap="truncate">{char}</Text>
+      </Box>
+      <Text color={t.fgDim} wrap="truncate">{label}</Text>
+    </Box>
+  );
+}
+
+/** An inverse-video key chip — the TUI "button"/active treatment. */
 function KeyChip({ k, accent = false }: { k: string; accent?: boolean }): React.ReactElement {
   const t = useTokens();
   return accent ? (
-    <Text color={ctp.base} backgroundColor={t.accent}>{' ' + k + ' '}</Text>
+    <Text color={t.fgInverse} backgroundColor={t.accent}>{' ' + k + ' '}</Text>
   ) : (
     <Text color={t.fgInverse} backgroundColor={t.bgInverse}>{' ' + k + ' '}</Text>
   );
 }
 
-function BorderSpecimen({ label, tone, square = false }: { label: string; tone: 'resting' | 'focus' | 'error'; square?: boolean }): React.ReactElement {
+/** A small non-flexing pane demoing a Pane tone (and the legacy square shape). */
+function BorderSpecimen({
+  label,
+  tone,
+  square = false,
+}: {
+  label: string;
+  tone: 'resting' | 'focus' | 'error';
+  square?: boolean;
+}): React.ReactElement {
   const t = useTokens();
   const g = useGlyph();
   return (
     <Pane title={label} tone={tone} variant={square ? 'square' : undefined} flexGrow={0}>
-      <Text color={t.fgDim}>
+      <Text color={t.fgDim} wrap="truncate">
         {tone === 'error' ? (
-          <Text><Text color={t.stateErr}>{g('cross')}</Text>{' error · red'}</Text>
+          <Text>
+            <Text color={t.stateErr}>{g('cross')}</Text>
+            {' error · red'}
+          </Text>
         ) : tone === 'focus' ? (
-          <Text><Text color={t.accent}>{g('focus')}</Text>{' focus · lavender'}</Text>
+          <Text>
+            <Text color={t.accent}>{g('focus')}</Text>
+            {' focus · lavender'}
+          </Text>
         ) : square ? (
           'square · legacy'
         ) : (
@@ -149,291 +148,629 @@ function BorderSpecimen({ label, tone, square = false }: { label: string; tone: 
   );
 }
 
-type DialogKind = null | 'help' | 'delete' | 'error';
+// ── THEME · the one switch ─────────────────────────────────────────────────────
+
+/** The live theme picker — built from the kit's own vocabulary (focus arrow +
+ *  checkbox + inverse), calling the single owner `setTheme`. No per-component
+ *  colour; switching repaints the whole page from the intent layer. */
+function ThemePicker(): React.ReactElement {
+  const t = useTokens();
+  const g = useGlyph();
+  const { themeId, themes } = useThemeControls();
+  return (
+    <Box flexDirection="column">
+      {themes.map((th) => {
+        const on = th.id === themeId;
+        // Fixed-width Boxes per column so rows stay grid-aligned: the selection
+        // glyph reserves 2 cells (☑ is double-wide while ☐ is single), matching
+        // how List sizes its checkbox column.
+        return (
+          <Box key={th.id} flexDirection="row">
+            <Box width={1} flexShrink={0}>
+              <Text color={t.accent}>{on ? g('focus') : ' '}</Text>
+            </Box>
+            <Box width={2} flexShrink={0} marginLeft={1}>
+              <Text color={on ? t.accent : t.fgDim}>{on ? g('checkboxOn') : g('checkboxOff')}</Text>
+            </Box>
+            <Box width={13} flexShrink={0} marginLeft={1}>
+              <Text color={on ? t.fg : t.fgMuted} wrap="truncate">{th.label}</Text>
+            </Box>
+            <Box width={6} flexShrink={0}>
+              <Text color={t.fgFaint} wrap="truncate">{th.mode}</Text>
+            </Box>
+            <Text color={t.fgDim} wrap="truncate">{th.blurb}</Text>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
+
+const DOMAIN_DOTS: Array<keyof SemanticTokens> = [
+  'domainBlue', 'domainAzure', 'domainCyan', 'domainGreen',
+  'domainAmber', 'domainYellow', 'domainViolet', 'domainRed',
+];
+
+/** A live specimen of the active theme — states, accent, domain hues, chrome. */
+function ThemeSpecimen(): React.ReactElement {
+  const t = useTokens();
+  const g = useGlyph();
+  return (
+    <Box flexDirection="column">
+      <Box>
+        <Box width={8} flexShrink={0}><Text color={t.fgDim}>state</Text></Box>
+        <Text color={t.stateOk}>{g('check') + '  '}</Text>
+        <Text color={t.stateErr}>{g('cross') + '  '}</Text>
+        <Text color={t.statePending}>{g('circle') + '  '}</Text>
+        <Text color={t.stateDrift}>{g('half') + '  '}</Text>
+        <Text color={t.stateWarn}>{g('warn') + '  '}</Text>
+        <Text color={t.stateInfo}>{g('rerun')}</Text>
+      </Box>
+      <Box>
+        <Box width={8} flexShrink={0}><Text color={t.fgDim}>accent</Text></Box>
+        <KeyChip k="focus" accent />
+        <Text color={t.accent}>{'   ' + g('focus') + ' selected'}</Text>
+      </Box>
+      <Box>
+        <Box width={8} flexShrink={0}><Text color={t.fgDim}>domain</Text></Box>
+        {DOMAIN_DOTS.map((d) => (
+          <Text key={d} color={t[d]}>{'● '}</Text>
+        ))}
+      </Box>
+      <Box>
+        <Box width={8} flexShrink={0}><Text color={t.fgDim}>link</Text></Box>
+        <Text color={t.link}>{g('depends') + ' reference'}</Text>
+        <Text color={t.highlight}>{'   match'}</Text>
+      </Box>
+    </Box>
+  );
+}
+
+function ThemeSection(): React.ReactElement {
+  const t = useTokens();
+  const { theme } = useThemeControls();
+  return (
+    <Box flexDirection="column">
+      <SectionTitle title="THEME" sub="one switch · owned by the surface · every component recolours from intent, never per component" />
+      <Box flexDirection="row">
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="select" tone="focus" flexGrow={0}>
+            <ThemePicker />
+            <Text> </Text>
+            <Text color={t.fgFaint} wrap="truncate">{'t / T switch — the whole page repaints from the intent layer'}</Text>
+          </Pane>
+        </Box>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title={'live · ' + theme.label} flexGrow={0}>
+            <ThemeSpecimen />
+          </Pane>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+// ── COLOUR ──────────────────────────────────────────────────────────────────
+
+const SURFACES = ['crust', 'mantle', 'base', 'surface0', 'surface1', 'surface2'] as const;
+const TEXT_TIERS: Array<[keyof SemanticTokens, string]> = [
+  ['fg', 'default body'],
+  ['fgMuted', 'secondary'],
+  ['fgDim', 'tertiary / hints'],
+  ['fgFaint', 'labels / captions'],
+  ['fgDisabled', 'separators'],
+];
+const ACCENT_HUES = [
+  'rosewater', 'flamingo', 'pink', 'mauve', 'red', 'maroon', 'peach',
+  'yellow', 'green', 'teal', 'sky', 'sapphire', 'blue', 'lavender',
+] as const;
+const SEMANTIC: Array<[keyof SemanticTokens, string, string]> = [
+  ['stateOk', '--state-ok', '✓ installed / done'],
+  ['stateErr', '--state-err', '✗ missing / failed'],
+  ['stateWarn', '--state-warn', '⚠ warning'],
+  ['statePending', '--state-pending', '◯ pending'],
+  ['stateDrift', '--state-drift', '◐ drift / partial'],
+  ['stateInfo', '--state-info', '↻ info / rerun'],
+  ['accent', '--accent', 'focus · brand · primary'],
+  ['accentAlt', '--accent-alt', 'secondary brand'],
+  ['link', '--link', 'links / refs'],
+  ['highlight', '--highlight', 'search match'],
+  ['border', '--border', 'resting pane border'],
+  ['borderFocus', '--border-focus', 'focused pane border'],
+];
+
+function ColourSection(): React.ReactElement {
+  const t = useTokens();
+  const { theme } = useThemeControls();
+  const pal = theme.palette;
+  return (
+    <Box flexDirection="column">
+      <SectionTitle title="COLOUR" sub="26-slot palette · swatches read the live theme · semantic colour lives on glyphs, never body text" />
+      <Box flexDirection="row">
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="surfaces" flexGrow={0}>
+            {SURFACES.map((n) => (
+              <Box key={n}>
+                <Text backgroundColor={pal[n]} color={t.fg}>{(' ' + n).padEnd(10)}</Text>
+                <Text color={t.fgDim}>{' ' + pal[n]}</Text>
+              </Box>
+            ))}
+            <Text color={t.fgFaint} wrap="truncate">panels share the bg — split by border glyphs</Text>
+          </Pane>
+        </Box>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="text tiers" flexGrow={0}>
+            {TEXT_TIERS.map(([tok, role]) => (
+              <Text key={tok} color={t[tok]} wrap="truncate">{'● ' + tok + ' — ' + role}</Text>
+            ))}
+            <Text color={t.fgFaint} wrap="truncate">three greys max — then an accent</Text>
+          </Pane>
+        </Box>
+      </Box>
+      <Box flexDirection="row">
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="accents · 14 hues" flexGrow={0}>
+            <Box flexWrap="wrap">
+              {ACCENT_HUES.map((n) => (
+                <Box key={n} width={12} flexShrink={0}>
+                  <Text color={pal[n]}>{'● '}</Text>
+                  <Text color={t.fgDim} wrap="truncate">{n}</Text>
+                </Box>
+              ))}
+            </Box>
+          </Pane>
+        </Box>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="semantic tokens" flexGrow={0}>
+            {SEMANTIC.map(([tok, label, role]) => (
+              <Box key={label}>
+                <Text color={t[tok]}>{'● '}</Text>
+                <Box width={16} flexShrink={0}><Text color={t.fg} wrap="truncate">{label}</Text></Box>
+                <Text color={t.fgDim} wrap="truncate">{role}</Text>
+              </Box>
+            ))}
+          </Pane>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+// ── TYPE ──────────────────────────────────────────────────────────────────────
+
+function TypeSection(): React.ReactElement {
+  const t = useTokens();
+  return (
+    <Box flexDirection="column">
+      <SectionTitle title="TYPE" sub="one family · one size · one weight (400) · bold = inverse video" />
+      <Box flexDirection="row">
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="family" flexGrow={0}>
+            <Text color={t.fg}>CaskaydiaMono Nerd Font</Text>
+            <Text color={t.fgDim}>abcdefghijklmnopqrstuvwxyz 0123456789</Text>
+            <Text color={t.fgDim}>{'{ } [ ] ( ) < > / \\ | = + - * & % $ #'}</Text>
+            <Text color={t.fgFaint} wrap="truncate">tracking 0 · ligatures off · no italics</Text>
+          </Pane>
+        </Box>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="bold = inverse video" flexGrow={0}>
+            <Box>
+              <Text color={t.fgInverse} backgroundColor={t.bgInverse}>{' inverse video '}</Text>
+              <Text color={t.fgDim}>{' is the only "bold"'}</Text>
+            </Box>
+            <Text> </Text>
+            <Text color={t.fgFaint}>active hotkeys</Text>
+            <Box gap={1}>
+              <KeyChip k="TAB" />
+              <KeyChip k="ENTER" />
+              <KeyChip k="?" accent />
+            </Box>
+          </Pane>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+// ── GLYPHS · contract (tier 0) ─────────────────────────────────────────────────
+
+const STATE_LEGEND: Array<{ name: string; token: keyof SemanticTokens; meaning: string }> = [
+  { name: 'check', token: 'stateOk', meaning: 'installed / done' },
+  { name: 'cross', token: 'stateErr', meaning: 'missing / failed' },
+  { name: 'circle', token: 'statePending', meaning: 'pending' },
+  { name: 'half', token: 'stateDrift', meaning: 'drift / partial' },
+  { name: 'warn', token: 'stateWarn', meaning: 'warning' },
+  { name: 'rerun', token: 'stateInfo', meaning: 'idempotent / refresh' },
+];
+const SEL_LEGEND: Array<{ name: string; token: keyof SemanticTokens; meaning: string }> = [
+  { name: 'checkboxOn', token: 'accent', meaning: 'selected' },
+  { name: 'checkboxOff', token: 'fgDim', meaning: 'unselected' },
+  { name: 'checkboxLock', token: 'fgMuted', meaning: 'selected · locked' },
+];
+const NAV_LEGEND = ['focus', 'collapsed', 'expanded', 'depends', 'flow', 'back', 'moreAbove', 'moreBelow'];
+
+function ContractSection(): React.ReactElement {
+  const t = useTokens();
+  const g = useGlyph();
+  return (
+    <Box flexDirection="column">
+      <SectionTitle title="GLYPHS · CONTRACT" sub="tier 0 · always present · never change · the framework owns glyph + colour" />
+      <Box flexDirection="row">
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="state" flexGrow={0}>
+            {STATE_LEGEND.map((r) => (
+              <Box key={r.name}>
+                <Box width={2} flexShrink={0}><Text color={t[r.token]}>{g(r.name)}</Text></Box>
+                <Box width={11} flexShrink={0}><Text color={t.fg} wrap="truncate">{r.name}</Text></Box>
+                <Text color={t.fgDim} wrap="truncate">{r.meaning}</Text>
+              </Box>
+            ))}
+          </Pane>
+        </Box>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="selection" flexGrow={0}>
+            {SEL_LEGEND.map((r) => (
+              <Box key={r.name}>
+                <Box width={2} flexShrink={0}><Text color={t[r.token]}>{g(r.name)}</Text></Box>
+                <Box width={13} flexShrink={0}><Text color={t.fg} wrap="truncate">{r.name}</Text></Box>
+                <Text color={t.fgDim} wrap="truncate">{r.meaning}</Text>
+              </Box>
+            ))}
+          </Pane>
+        </Box>
+      </Box>
+      <Box flexDirection="row">
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="navigation" flexGrow={0}>
+            <Box flexWrap="wrap">
+              {NAV_LEGEND.map((n) => (
+                <GlyphCell key={n} name={n} label={n} color={t.fgMuted} width={16} />
+              ))}
+            </Box>
+          </Pane>
+        </Box>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="box · blocks" flexGrow={0}>
+            <Text color={t.border}>{'╭───────╮  ┌───────┐'}</Text>
+            <Text color={t.border}>{'│rounded│  │square │'}</Text>
+            <Text color={t.border}>{'╰───────╯  └───────┘'}</Text>
+            <Text color={t.fgDim}>{'tees ├ ┤ ┬ ┴ ┼   ' + blocks.full + ' ' + blocks.dark + ' ' + blocks.medium + ' ' + blocks.light}</Text>
+            <Box>
+              <ProgressBar value={0.62} width={18} />
+              <Text color={t.fgDim}>{' 62%'}</Text>
+            </Box>
+          </Pane>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+// ── GLYPHS · categories (tier 1 + 2) ───────────────────────────────────────────
+
+function PackGrid({ name, pack }: { name: string; pack: Record<string, GlyphVariants> }): React.ReactElement {
+  const t = useTokens();
+  const names = Object.keys(pack);
+  return (
+    <Box flexDirection="column">
+      <Text color={t.fgFaint}>
+        {name}
+        <Text color={t.fgDim}>{' · ' + names.length}</Text>
+      </Text>
+      <Box flexWrap="wrap">
+        {names.map((n) => {
+          const e = pack[n]!;
+          // pack entries store a token key in `color`; resolve through the theme.
+          const tok = (e.color ?? 'fgMuted') as keyof SemanticTokens;
+          return <PackCell key={n} char={e.nerd} label={n} color={t[tok]} />;
+        })}
+      </Box>
+    </Box>
+  );
+}
+
+function CategorySection(): React.ReactElement {
+  const t = useTokens();
+  return (
+    <Box flexDirection="column">
+      <SectionTitle title="GLYPHS · CATEGORIES" sub="tier 1 + 2 · curated packs · opt in with registerGlyphs(PACK) · take only what you use" />
+      <Pane title="domain packs" flexGrow={0}>
+        <PackGrid name="common (tier 1)" pack={COMMON_DOMAINS} />
+        {Object.keys(GLYPH_PACKS).map((cat) => (
+          <PackGrid key={cat} name={cat} pack={GLYPH_PACKS[cat]!} />
+        ))}
+        <Text color={t.fgFaint} wrap="truncate">each entry: codepoint + unicode + ascii fallback + a semantic colour token</Text>
+      </Pane>
+    </Box>
+  );
+}
+
+// ── COMPONENTS ──────────────────────────────────────────────────────────────
+
+const INV_ROWS: ListRowData[] = [
+  { id: 'pg', domain: 'postgresql', state: 'installed', selected: true, label: 'postgres@14.10', meta: ':5432' },
+  { id: 'redis', domain: 'redis', state: 'ok', selected: true, label: 'redis@7.2', meta: ':6379' },
+  { id: 'docker', domain: 'docker', state: 'pending', selected: false, label: 'docker', meta: '28 ctr' },
+  { id: 'nginx', domain: 'ubuntu', state: 'drift', selected: false, label: 'nginx', meta: 'drift' },
+  { id: 'node', domain: 'nodejs', state: 'ok', locked: true, label: 'node · api', meta: ':3000' },
+  { id: 'graf', domain: 'database', state: 'missing', selected: false, label: 'grafana', meta: 'missing' },
+  { id: 'ssh', domain: 'ssh', state: 'ok', selected: false, label: 'ssh-agent', meta: '3 keys' },
+];
+
+const DETAIL_ITEMS: DescriptionItem[] = [
+  { value: 'postgres@14.10' },
+  { value: 'the focused row, expanded', muted: true },
+  { term: 'state', state: 'installed', value: 'running' },
+  { term: 'path', value: 'data/pg/main' },
+  { term: 'port', value: '5432' },
+  { term: 'requires', value: '↳ redis' },
+];
+
+function ComponentSection(): React.ReactElement {
+  const t = useTokens();
+  return (
+    <Box flexDirection="column">
+      <SectionTitle title="COMPONENTS · CHROME" sub="Header · Footer · the frame every blink screen inherits" />
+      <Pane title="Header" flexGrow={0}>
+        <Header mark={blocks.cursor} title="blink" subtitle="screen title" right={'✓ 4  ◐ 1  ✗ 1'} />
+      </Pane>
+      <Pane title="Footer" flexGrow={0}>
+        <Footer
+          keys={[{ k: 'tab', desc: 'pane' }, { k: '↵', desc: 'open' }, { k: '/', desc: 'search' }, { k: 'q', desc: 'quit' }]}
+          right="6 of 8"
+        />
+      </Pane>
+
+      <SectionTitle title="COMPONENTS · PANES" sub="one shape — single-line rounded · emphasis is colour, never weight" />
+      <Box flexDirection="row">
+        <Box flexBasis={0} flexGrow={1} minWidth={0}><BorderSpecimen label="resting" tone="resting" /></Box>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}><BorderSpecimen label="focus" tone="focus" /></Box>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}><BorderSpecimen label="error" tone="error" /></Box>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}><BorderSpecimen label="square" tone="resting" square /></Box>
+      </Box>
+
+      <SectionTitle title="COMPONENTS · DATA" sub="List · DescriptionList · intent-only rows (state + domain NAMES), framework paints them" />
+      <Box flexDirection="row">
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="List ‹windowed›" flexGrow={0}>
+            <List rows={INV_ROWS} focusedId="docker" selectedIds={new Set(['pg', 'redis'])} height={5} />
+            <Text color={t.fgFaint} wrap="truncate">{'▶ focus · ☑/☐/▣ · state · domain · ▴▾ overflow'}</Text>
+          </Pane>
+        </Box>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="DescriptionList" flexGrow={0}>
+            <DescriptionList items={DETAIL_ITEMS} gutter={9} />
+          </Pane>
+        </Box>
+      </Box>
+
+      <SectionTitle title="COMPONENTS · INPUT" sub="single-line field · ▎ cursor blinks · border recolours by tone" />
+      <Box flexDirection="row">
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="states" flexGrow={0}>
+            <Input title="host" value="db.internal:5432" />
+            <Text> </Text>
+            <Input title="filter" value="postgr" focused />
+            <Text> </Text>
+            <Input title="token" value="" placeholder="paste token" error="required — field is empty" />
+          </Pane>
+        </Box>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="Banner ‹in-flow notice›" flexGrow={0}>
+            <Banner tone="info">depends on web/valet — auto-selected</Banner>
+            <Banner tone="success">connected · postgres@14.10</Banner>
+            <Banner tone="warn">nginx config out-of-date — press a to apply</Banner>
+            <Text color={t.fgFaint} wrap="truncate">colour on the leading glyph only · text stays calm</Text>
+          </Pane>
+        </Box>
+      </Box>
+
+      <SectionTitle title="COMPONENTS · DIALOG" sub="a focused (lavender) rounded pane that overlays · error recolours red · no blur, no fade" />
+      <Box flexDirection="row">
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Dialog
+            title="delete process"
+            width={42}
+            lines={['remove this process from the host?', '↳ grafana']}
+            actions={[{ key: 'N', label: 'keep', primary: true }, { key: 'y', label: 'delete' }]}
+          />
+        </Box>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Dialog
+            title="error"
+            tone="error"
+            width={42}
+            lines={['✗ grafana — port in use', 'another process is bound to this port']}
+            actions={[{ key: '↵', label: 'dismiss', primary: true }, { key: 'l', label: 'view log' }]}
+          />
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+// ── MOTION ──────────────────────────────────────────────────────────────────
+
+function MotionSection({ interactive }: { interactive: boolean }): React.ReactElement {
+  const t = useTokens();
+  const g = useGlyph();
+  return (
+    <Box flexDirection="column">
+      <SectionTitle title="MOTION" sub="two sanctioned motions · both character-level · no transition / transform / easing" />
+      <Box flexDirection="row">
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="spinner ‹80ms›" flexGrow={0}>
+            <Box>
+              <Spinner active={interactive} />
+              <Text color={t.stateInfo}>{' syncing  '}</Text>
+              <Text color={t.fgDim}>3/12</Text>
+            </Box>
+            <Text color={t.fgDim}>{'⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏'}</Text>
+          </Pane>
+        </Box>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="cursor ‹1Hz›" flexGrow={0}>
+            <Box>
+              <Text color={t.fg}>prompt </Text>
+              <Cursor active={interactive} />
+            </Box>
+            <Text color={t.fgFaint} wrap="truncate">blinks at 1 Hz, no fade — the heart of the brand</Text>
+          </Pane>
+        </Box>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="counter + progress" flexGrow={0}>
+            <Box>
+              <Text color={t.stateInfo}>{g('rerun') + ' applying  '}</Text>
+              <Text color={t.fgDim}>8/13</Text>
+            </Box>
+            <Box>
+              <ProgressBar value={0.62} width={16} />
+              <Text color={t.fgDim}>{' 62%'}</Text>
+            </Box>
+          </Pane>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+// ── the page ──────────────────────────────────────────────────────────────────
 
 function App({
   interactive = true,
   onExit,
 }: {
   interactive?: boolean;
-  /** Called on `q`. The launcher passes "return to menu"; standalone falls back to quit. */
   onExit?: () => void;
 } = {}): React.ReactElement {
   const t = useTokens();
-  const g = useGlyph();
   const { exit } = useApp();
   const leave = onExit ?? exit;
   const leaveLabel = onExit ? 'menu' : 'quit';
   const { rows } = useStdoutDimensions();
+  const { theme, themeId, setTheme, themes } = useThemeControls();
 
-  const [focusIdx, setFocusIdx] = useState(2);
-  const [sel, setSel] = useState<Set<string>>(new Set(['pg', 'redis']));
-  const [searching, setSearching] = useState(false);
-  const [query, setQuery] = useState('');
-  const [dialog, setDialog] = useState<DialogKind>(null);
+  const [scroll, setScroll] = useState(0);
+  const [help, setHelp] = useState(false);
 
-  const current = PROCS[Math.min(focusIdx, PROCS.length - 1)]!;
+  // The viewport is an EXPLICIT height (the whole screen minus the 1-row Header
+  // and 1-row Footer). A flex-grown box can't bound a taller-than-itself child
+  // under overflow:hidden in Ink — it expands to the child and overlaps the
+  // chrome. A fixed height clips correctly; we scroll by offsetting the content.
+  const totalH = Math.max(1, rows - 1);
+  // header (1) + footer (its 1-cell top margin + 1-cell bar = 2) = 3 rows of chrome.
+  const viewportH = Math.max(1, totalH - 3);
+
+  const contentRef = useRef<DOMElement>(null);
+  const [ch, setCh] = useState(0);
+  const maxScrollRef = useRef(0);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      const m = measureElement(contentRef.current);
+      if (m.height && m.height !== ch) setCh(m.height);
+    }
+  });
+
+  const maxScroll = Math.max(0, ch - viewportH);
+  maxScrollRef.current = maxScroll;
+  const offset = CLAMP(scroll, 0, maxScroll);
+
+  const themeIdx = Math.max(0, themes.findIndex((th) => th.id === themeId));
+  const cycleTheme = (dir: 1 | -1): void => {
+    const next = (themeIdx + dir + themes.length) % themes.length;
+    setTheme(themes[next]!.id);
+  };
 
   useInput(
     (input, key) => {
-      if (searching) {
-        if (key.escape) {
-          setSearching(false);
-          setQuery('');
-        } else if (key.return) setSearching(false);
-        else if (key.backspace || key.delete) setQuery((q) => q.slice(0, -1));
-        else if (input) setQuery((q) => q + input);
+      if (help) {
+        if (key.escape || key.return || input === '?') setHelp(false);
         return;
       }
-      if (dialog) {
-        if (key.escape || key.return || ['n', 'N', 'y', 'Y', '?', 'l'].includes(input)) setDialog(null);
-        return;
-      }
-      if (key.downArrow || input === 'j') setFocusIdx((i) => Math.min(i + 1, PROCS.length - 1));
-      else if (key.upArrow || input === 'k') setFocusIdx((i) => Math.max(i - 1, 0));
-      else if (input === ' ') {
-        const id = current.id;
-        setSel((s) => {
-          const n = new Set(s);
-          if (n.has(id)) n.delete(id);
-          else n.add(id);
-          return n;
-        });
-      } else if (input === '/') setSearching(true);
-      else if (input === '?') setDialog('help');
-      else if (input === 'd') setDialog('delete');
-      else if (input === 'e') setDialog('error');
+      const page = Math.max(1, viewportH - 1);
+      if (key.downArrow || input === 'j') setScroll((s) => CLAMP(s + 1, 0, maxScrollRef.current));
+      else if (key.upArrow || input === 'k') setScroll((s) => CLAMP(s - 1, 0, maxScrollRef.current));
+      else if (input === ' ' || key.pageDown) setScroll((s) => CLAMP(s + page, 0, maxScrollRef.current));
+      else if (input === 'b' || key.pageUp) setScroll((s) => CLAMP(s - page, 0, maxScrollRef.current));
+      else if (input === 'g') setScroll(0);
+      else if (input === 'G') setScroll(maxScrollRef.current);
+      else if (input === 't') cycleTheme(1);
+      else if (input === 'T') cycleTheme(-1);
+      else if (input === '?') setHelp(true);
       else if (input === 'q') leave();
     },
     { isActive: interactive },
   );
 
-  const procRows: ListRowData[] = PROCS.map((p) => ({
-    id: p.id,
-    domain: p.domain,
-    state: p.state,
-    label: p.name,
-    meta: p.meta,
-  }));
-
-  const okN = PROCS.filter((p) => p.state === 'installed' || p.state === 'ok').length;
-
-  const detailItems: DescriptionItem[] = [
-    { value: current.name },
-    { value: 'detail of the focused row', muted: true },
-    { term: 'state', state: current.state, value: current.state },
-    { term: 'change', value: 'keep — no action' },
-    { term: 'items', value: '4 steps' },
-    { term: 'requires', value: `${g('depends')} pg · redis` },
-  ];
-
-  const footerKeys =
-    dialog === 'help'
-      ? [{ k: '?', desc: 'close' }]
-      : dialog
-        ? [{ k: 'esc', desc: 'cancel' }, { k: 'y', desc: 'confirm' }, { k: 'n', desc: 'no' }]
-        : searching
-          ? [{ k: 'esc', desc: 'clear' }, { k: 'enter', desc: 'done' }]
-          : [
-              { k: '↑↓', desc: 'move' },
-              { k: 'spc', desc: 'select' },
-              { k: '/', desc: 'search' },
-              { k: 'd', desc: 'delete' },
-              { k: 'e', desc: 'error' },
-              { k: '?', desc: 'keys' },
-              { k: 'q', desc: leaveLabel },
-            ];
-
-  // Reserve one spare row so Ink stays on the incremental-erase path (no flicker).
-  const totalH = Math.max(1, rows - 1);
+  const atTop = offset <= 0;
+  const atBottom = offset >= maxScroll;
 
   return (
     <Box flexDirection="column" height={totalH}>
-      {/* title bar — the Header primitive (mark + title + right status) */}
       <Header
-        mark={<Cursor />}
+        mark={<Cursor active={interactive} />}
         title="blink"
-        subtitle="‹Header›"
+        subtitle="inventory"
         right={
-          <Box flexDirection="row">
+          <Box>
             <Spinner active={interactive} />
-            <Text color={t.fgMuted}>{' every primitive on one screen'}</Text>
+            <Text color={t.fgMuted}>{' every token · glyph · component'}</Text>
           </Box>
         }
       />
 
-      {dialog ? (
+      {help ? (
         <Box flexGrow={1} minHeight={0}>
-          <DialogLayer kind={dialog} current={current} />
+          <Dialog
+            title="keys"
+            width={48}
+            lines={[
+              '↑ ↓ / j k   scroll        spc / b   page',
+              'g / G       top / bottom  t / T     theme',
+              '?           this help     q         ' + leaveLabel,
+            ]}
+            actions={[{ key: '?', label: 'close', primary: true }]}
+          />
         </Box>
       ) : (
-        <Box flexDirection="row" flexGrow={1} minHeight={0}>
-          {/* ── column A : lists ── */}
-          <Box flexDirection="column" flexGrow={1} flexBasis={0} minWidth={0}>
-            <Pane title="processes ‹List›" tone={searching ? 'resting' : 'focus'} flexGrow={2}>
-              <List rows={procRows} focusedId={current.id} selectedIds={sel} />
-              <Text> </Text>
-              <Text color={t.fgFaint}>{`${g('focus')} focus · fill · spc selects`}</Text>
-            </Pane>
-            <Pane title="tasks ‹glyphs›" flexGrow={0}>
-              {TASKS.map((task) => (
-                <Box key={task.id} flexDirection="row">
-                  <Box width={2} flexShrink={0}>
-                    <Text color={t.accent}>
-                      {task.exp === 'open' ? g('expanded') : task.exp === 'closed' ? g('collapsed') : ' '}
-                    </Text>
-                  </Box>
-                  <Box width={2} flexShrink={0}>
-                    <Text color={task.sel ? t.accent : t.fgDim}>
-                      {task.child ? ' ' : task.sel ? g('checkboxOn') : g('checkboxOff')}
-                    </Text>
-                  </Box>
-                  <Text color={task.child ? t.fgDim : t.fg} wrap="truncate">
-                    {task.child ? `${g('depends')} ${task.label}` : task.label}
-                  </Text>
-                </Box>
-              ))}
-            </Pane>
-            <Pane title="detail ‹DescriptionList›" flexGrow={2}>
-              <DescriptionList items={detailItems} gutter={9} />
-            </Pane>
-          </Box>
-
-          {/* ── column B : inputs + glyphs ── */}
-          <Box flexDirection="column" flexGrow={1} flexBasis={0} minWidth={0}>
-            <Pane title="inputs ‹Input›" flexGrow={0}>
-              <Input title="filter" value={searching ? query : ''} placeholder="type to filter…" focused={searching} />
-              <Text> </Text>
-              <Input title="host" value="db.internal:5432" />
-              <Text> </Text>
-              <Input title="token" value="" placeholder="paste token" error="required — field is empty" />
-            </Pane>
-            <Pane title="glyphs ‹useGlyph›" flexGrow={1}>
-              <Text color={t.fgFaint}>state</Text>
-              <Box flexDirection="row" flexWrap="wrap">
-                {STATE_BANK.map((s) => (
-                  <GlyphCell key={s.name} name={s.name} label={s.name} color={t[s.token] as string} />
-                ))}
-              </Box>
-              <Text> </Text>
-              <Text color={t.fgFaint}>navigation</Text>
-              <Box flexDirection="row" flexWrap="wrap">
-                {NAV_BANK.map((n) => (
-                  <GlyphCell key={n} name={n} label={n} color={t.fgMuted} />
-                ))}
-              </Box>
-              <Text> </Text>
-              <Text color={t.fgFaint}>app glyphs · registered, not core</Text>
-              <Box flexDirection="row" flexWrap="wrap">
-                {DOMAIN_BANK.map((d) => (
-                  <GlyphCell key={d.name} name={d.name} label={d.label} color={t.fgMuted} />
-                ))}
-              </Box>
-            </Pane>
-          </Box>
-
-          {/* ── column C : status, tokens, borders ── */}
-          <Box flexDirection="column" flexGrow={1} flexBasis={0} minWidth={0}>
-            <Pane title="motion ‹Spinner›" flexGrow={0}>
-              <Box flexDirection="row">
-                <Spinner active={interactive} />
-                <Text color={t.stateInfo}>{' syncing  '}</Text>
-                <Text color={t.fgDim}>3/12</Text>
-              </Box>
-              <Box flexDirection="row">
-                <ProgressBar value={0.62} width={18} />
-                <Text color={t.fgDim}>{' 62%'}</Text>
-              </Box>
-              <Text> </Text>
-              <Box flexDirection="row">
-                <Text color={t.stateOk}>{`${g('check')} ${okN}`}</Text>
-                <Text color={t.statePending}>{`  ${g('circle')} 1`}</Text>
-                <Text color={t.stateDrift}>{`  ${g('half')} 1`}</Text>
-                <Text color={t.stateErr}>{`  ${g('cross')} 1`}</Text>
-              </Box>
-              <Box flexDirection="row">
-                <Text color={t.stateWarn}>{g('warn')}</Text>
-                <Text color={t.fgDim}>{' nginx config out-of-date'}</Text>
-              </Box>
-            </Pane>
-            <Pane title="tokens ‹theme›" flexGrow={0}>
-              <Text color={t.fg}>text · cdd6f4 — default fg</Text>
-              <Text color={t.fgMuted}>bac2de — muted</Text>
-              <Text color={t.fgDim}>a6adc8 — dim / hints</Text>
-              <Text> </Text>
-              {ACCENTS.map((a) => (
-                <Text key={a.label} color={a.color}>{`● ${a.label}`}</Text>
-              ))}
-              <Text> </Text>
-              <Text color={t.fgFaint}>inverse = "bold"</Text>
-              <Box flexDirection="row" gap={1}>
-                <KeyChip k="TAB" />
-                <KeyChip k="↵" />
-                <KeyChip k="?" accent />
-              </Box>
-            </Pane>
-            <Pane title="borders ‹Pane›" flexGrow={1}>
-              <BorderSpecimen label="resting" tone="resting" />
-              <BorderSpecimen label="focus" tone="focus" />
-              <BorderSpecimen label="error" tone="error" />
-              <BorderSpecimen label="square" tone="resting" square />
-            </Pane>
+        <Box height={viewportH} overflow="hidden" flexDirection="column">
+          <Box ref={contentRef} flexDirection="column" flexShrink={0} marginTop={-offset}>
+            <ThemeSection />
+            <ColourSection />
+            <TypeSection />
+            <ContractSection />
+            <CategorySection />
+            <ComponentSection />
+            <MotionSection interactive={interactive} />
+            <Text color={t.fgFaint}>{"— if you can't draw it with characters, it doesn't belong in a blink app —"}</Text>
           </Box>
         </Box>
       )}
 
-      {/* banner — one-line in-flow notice, above the footer */}
-      {dialog ? null : (
-        <Box flexDirection="row" justifyContent="space-between">
-          <Banner tone="success">auto-selected mysql, redis — required by web/valet</Banner>
-          <Text color={t.fgFaint}>{'‹Banner› '}</Text>
-        </Box>
-      )}
-
-      <Footer keys={footerKeys} right={`‹Footer› · ${sel.size} selected`} />
+      <Footer
+        keys={
+          help
+            ? [{ k: '?', desc: 'close' }]
+            : [
+                { k: '↑↓', desc: 'scroll' },
+                { k: 'spc', desc: 'page' },
+                { k: 't', desc: 'theme' },
+                { k: '?', desc: 'keys' },
+                { k: 'q', desc: leaveLabel },
+              ]
+        }
+        right={`theme · ${theme.label}${atTop ? '' : atBottom ? ' · end' : ' · ' + Math.round((offset / Math.max(1, maxScroll)) * 100) + '%'}`}
+      />
     </Box>
-  );
-}
-
-function DialogLayer({ kind, current }: { kind: DialogKind; current: Proc }): React.ReactElement {
-  const g = useGlyph();
-  if (kind === 'delete')
-    return (
-      <Dialog
-        title="delete process"
-        lines={['remove this process from the host?', `${g('depends')} ${current.name}`]}
-        actions={[{ key: 'N', label: 'keep', primary: true }, { key: 'y', label: 'delete' }]}
-      />
-    );
-  if (kind === 'error')
-    return (
-      <Dialog
-        title="error"
-        tone="error"
-        width={52}
-        lines={[`${g('cross')} ${current.name} — port in use`, 'another process is bound to this port']}
-        actions={[{ key: 'enter', label: 'dismiss', primary: true }, { key: 'l', label: 'view log' }]}
-      />
-    );
-  return (
-    <Dialog
-      title="keys"
-      width={50}
-      lines={[
-        '↑ ↓ / j k   move focus      spc   select',
-        '/           search          d     delete',
-        'e           error dialog    ?     this help',
-      ]}
-      actions={[{ key: '?', label: 'close', primary: true }]}
-    />
   );
 }
 
 const invokedDirectly = Boolean(process.argv[1] && /showcase\.(tsx|js)$/.test(process.argv[1]));
 
 if (invokedDirectly && process.env.BLINK_DEMO_SNAPSHOT === '1') {
-  // Static snapshot: one non-interactive frame at the showcase's native 120×40
-  // canvas (denser than the 100×30 app target — it carries nine panes at once).
+  // Static snapshot: one non-interactive frame at the 100×30 design target,
+  // showing the top of the scrolling inventory.
   const frames: string[] = [];
   const sink = new Writable({
     write(chunk, _enc, cb) {
@@ -441,8 +778,8 @@ if (invokedDirectly && process.env.BLINK_DEMO_SNAPSHOT === '1') {
       cb();
     },
   }) as Writable & { columns: number; rows: number; isTTY?: boolean };
-  sink.columns = 120;
-  sink.rows = 41;
+  sink.columns = 100;
+  sink.rows = 31;
   const iconSet = await detectIconSet();
   const instance = render(
     <ThemeProvider iconSet={iconSet}>

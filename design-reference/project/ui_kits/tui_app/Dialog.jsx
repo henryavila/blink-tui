@@ -34,7 +34,7 @@ function Dialog({ title, tone = "default", lines = [], children, actions = [], w
               {actions.map((a, i) => (
                 <span key={i} style={{ display: "inline-flex", alignItems: "baseline", gap: "1ch" }}>
                   <span style={a.primary ? {
-                    background: "var(--accent)", color: "var(--ctp-base)", padding: "0 1ch",
+                    background: "var(--accent)", color: "var(--fg-inverse)", padding: "0 1ch",
                   } : { padding: "0 1ch", color: "var(--fg-muted)" }}>
                     {a.key}
                   </span>

@@ -60,7 +60,10 @@ describe('glyphs (dual-mode)', () => {
     // grid-safe, never tofu.
     expect(glyph('postgresql', 'unicode')).toBe('▤');
     expect(glyph('postgresql', 'ascii')).toBe('pg');
-    expect(glyphColor('postgresql')).toBe(catppuccinMocha.blue);
+    // Colour is intent, not style: the entry owns a hue-family TOKEN that the
+    // active theme resolves — so postgres recolours with the surface.
+    expect(glyphColor('postgresql')).toBe('domainBlue');
+    expect(mochaTokens.domainBlue).toBe(catppuccinMocha.blue);
   });
 
   test('unknown names render visibly (the name itself), never blank', () => {
