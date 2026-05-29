@@ -1,28 +1,27 @@
-import type { GlyphVariants, IconSet } from './types.js';
+import type { GlyphColor, GlyphVariants, IconSet } from './types.js';
 import type { SemanticTokens } from '../theme/tokens.js';
-import { catppuccinMocha as c } from '../theme/palette.js';
+import { nfChar } from './nerdIndex.js';
 
 /**
- * The canonical blink glyph palette — a 1:1 port of `assets/glyphs.json` from
- * the design system, widened to dual-mode `{ nerd, unicode, ascii }`.
+ * The blink glyph ENGINE — the Tier 0 contract (state · nav · box · spinner ·
+ * blocks) plus the extensible registry that powers Tiers 1–3.
  *
- * CONTRACT vs CONTENT. State + nav + box + spinner glyphs are the framework
- * **contract**: they appear in every blink app and never change, so they are
- * the only glyphs seeded into the registry at import.
+ * ─ Fonts vs. registry ─ The *drawing* of every Nerd Font glyph already lives in
+ * the user's terminal **font** (CaskaydiaMono ships ~10k icons in the Private
+ * Use Area); printing a codepoint is enough. What blink owns is the **registry**:
+ * the map from a semantic NAME to a glyph plus its curated `{ unicode, ascii }`
+ * fallbacks and its semantic `color` (a {@link SemanticTokens} key). Those three
+ * are curation — they can't be auto-derived for 10k icons — which is why blink
+ * *degrades* a glyph (nerd → unicode → ascii) rather than rendering tofu.
  *
- * Domain glyphs (`mysql`, `docker`, `laravel`, …) are **content**, not
- * contract — they only make sense for the app that uses them. blink ships
- * **none** of them in core. An app registers its own at boot via
- * {@link registerGlyphs} and reads them back through {@link glyph}, resolved by
- * the SAME icon-set detection + `{ nerd → unicode → ascii }` fallback as core
- * glyphs. {@link COMMON_DOMAINS} is an OPTIONAL convenience pack an app may opt
- * into; it is never auto-registered.
+ * ─ Contract vs. content ─ Tier 0 (this file) is the contract: it appears in
+ * every blink app and never changes, so it's the only thing seeded into the
+ * registry at import. Domain glyphs (Tiers 1–3) are CONTENT: the app opts in via
+ * {@link registerGlyphs} (`packs.ts`) or the raw index (`nerdIndex.ts`, `nf()`).
+ * blink core ships **zero** domain glyphs registered.
  */
 
-/** Build a Nerd Font private-use char from its codepoint (deterministic source). */
-const nf = (codepoint: number): string => String.fromCodePoint(codepoint);
-
-/** State glyphs — always coloured with their semantic state token. */
+// ── Tier 0: the contract — state glyphs (coloured by their state intent) ──────
 export const stateGlyphs = {
   check: { nerd: '✓', unicode: '✓', ascii: '[x]' },
   cross: { nerd: '✗', unicode: '✗', ascii: '[!]' },
@@ -53,7 +52,6 @@ export const navGlyphs = {
   flow: { nerd: '→', unicode: '→', ascii: '->' },
   back: { nerd: '◀', unicode: '◀', ascii: '<' },
   // Overflow markers for a windowed List / LogView — "there is more, off-screen".
-  // Distinct from `collapsed`/`expanded` (chevrons): these mean "more rows here".
   moreAbove: { nerd: '▴', unicode: '▴', ascii: '^' },
   moreBelow: { nerd: '▾', unicode: '▾', ascii: 'v' },
 } satisfies Record<string, GlyphVariants>;
@@ -61,26 +59,83 @@ export const navGlyphs = {
 /** Built-in glyph names — the contract set, before any app registrations. */
 export type BuiltinGlyphName = keyof typeof stateGlyphs | keyof typeof navGlyphs;
 
-// Mutable registry — seeded with the CONTRACT glyphs only. Domain glyphs are
-// app content and join via registerGlyphs() (see COMMON_DOMAINS for the pack).
+// ── defaults for uncurated / easy-form glyphs ────────────────────────────────
+/** A raw glyph with no curated colour renders muted — neutral, never semantic. */
+export const DEFAULT_GLYPH_COLOR: GlyphColor = 'fgMuted';
+/** A registered glyph with no curated unicode fallback degrades to this mark. */
+export const DEFAULT_UNICODE = '◆';
+
+// ── the registry — seeded with the CONTRACT glyphs only ───────────────────────
 const registry = new Map<string, GlyphVariants>();
 for (const table of [stateGlyphs, navGlyphs]) {
   for (const [name, variants] of Object.entries(table)) registry.set(name, variants);
 }
 
+/** `deriveAscii('postgresql')` → `'[po]'` — used when an entry omits an ascii fallback. */
+export function deriveAscii(name: string): string {
+  const s = String(name || '')
+    .replace(/[^a-z0-9]/gi, '')
+    .slice(0, 2)
+    .toLowerCase();
+  return '[' + (s || '?') + ']';
+}
+
+/**
+ * What {@link registerGlyphs} accepts per entry — three shapes, all coexisting:
+ *   - verbose : `{ nerd:'', unicode:'◆', ascii:'[la]', color:'domainRed' }`
+ *   - easy    : `{ nf:'dev-laravel', color:'domainRed' }`  ← codepoint from the index
+ *   - raw cp  : `{ cp:'e73f', color:'domainRed' }`         ← codepoint from hex
+ *   - string  : `''`                                  ← nerd only, all defaults
+ * Anything omitted is filled in: `unicode → ◆`, `ascii → derived`, `color → muted`.
+ */
+export type GlyphInput =
+  | string
+  | (Partial<GlyphVariants> & { nf?: string; cp?: string });
+
+function normalizeEntry(name: string, e: GlyphInput): GlyphVariants {
+  const input: Partial<GlyphVariants> & { nf?: string; cp?: string } =
+    typeof e === 'string' ? { nerd: e } : e;
+  let nerd = input.nerd;
+  if (nerd == null && input.cp != null) {
+    try {
+      nerd = String.fromCodePoint(parseInt(input.cp, 16));
+    } catch {
+      /* leave nerd undefined */
+    }
+  }
+  if (nerd == null && input.nf != null) nerd = nfChar(input.nf);
+  return {
+    nerd: nerd ?? '',
+    unicode: input.unicode ?? DEFAULT_UNICODE,
+    ascii: input.ascii ?? deriveAscii(name),
+    color: input.color ?? DEFAULT_GLYPH_COLOR,
+  };
+}
+
 /**
  * Register app-domain glyphs (or override built-ins). Call once at startup,
- * before the first render. Each entry may carry a `color` — owned here, at
- * REGISTRATION, never per render site, so a row says "this is a postgres row",
- * not "paint this blue":
+ * before the first render. Accepts one or more maps — later wins — so an app can
+ * take a pack then override the few entries it cares about. Each entry's `color`
+ * is owned here, at REGISTRATION, never per render site, so a row says "this is a
+ * postgres row", not "paint this blue":
  *
  * ```ts
- * registerGlyphs({ laravel: { nerd: nf(0xe73f), unicode: '◆', ascii: '[la]', color: ctp.red } });
- * registerGlyphs(COMMON_DOMAINS); // or take the convenience pack wholesale
+ * registerGlyphs(COMMON_DOMAINS);                       // Tier 1 pack
+ * registerGlyphs(LANGUAGES, DATABASES);                 // many Tier 2 packs
+ * registerGlyphs({ deploy: { nf: 'fa-rocket' } });      // easy form, from the index
+ * registerGlyphs({ database: { color: 'domainCyan' } }); // override one
  * ```
  */
-export function registerGlyphs(extra: Record<string, GlyphVariants>): void {
-  for (const [name, variants] of Object.entries(extra)) registry.set(name, variants);
+export function registerGlyphs(...maps: Array<Record<string, GlyphInput> | undefined>): void {
+  for (const map of maps) {
+    if (!map) continue;
+    for (const [name, entry] of Object.entries(map)) registry.set(name, normalizeEntry(name, entry));
+  }
+}
+
+/** Single-entry convenience for {@link registerGlyphs}. */
+export function registerGlyph(name: string, entry: GlyphInput): void {
+  registerGlyphs({ [name]: entry });
 }
 
 /** True if a glyph name is registered. */
@@ -88,28 +143,37 @@ export function hasGlyph(name: string): boolean {
   return registry.has(name);
 }
 
-/**
- * Resolve a glyph name to a string for the given icon set. Unknown names return
- * the name itself (so a typo renders visibly rather than blank). Prefer the
- * {@link useGlyph} hook inside components — it reads the icon set from context.
- */
-export function glyph(name: string, set: IconSet): string {
-  const variants = registry.get(name);
-  if (!variants) return name;
-  return variants[set];
+/** Every registered glyph name, sorted — for pickers & tests. */
+export function registeredNames(): string[] {
+  return [...registry.keys()].sort();
 }
 
 /**
- * The colour a registered domain glyph renders in, owned at registration. Read
- * by {@link List}/{@link DescriptionList} so the consumer never paints a domain
- * row by hand. Returns `undefined` for an unregistered name or one with no
- * colour — callers fall back to a muted token.
+ * Resolve a glyph name to a string for the given icon set, with the
+ * `nerd → unicode → ascii` fallback. Unknown names return the name itself (so a
+ * typo or an unregistered domain renders visibly as text rather than tofu).
+ * Prefer the {@link useGlyph} hook inside components — it reads the icon set from
+ * context.
  */
-export function glyphColor(name: string): string | undefined {
+export function glyph(name: string, set: IconSet): string {
+  const v = registry.get(name);
+  if (!v) return name;
+  if (set === 'ascii') return v.ascii || v.unicode || v.nerd || name;
+  if (set === 'unicode') return v.unicode || v.ascii || v.nerd || name;
+  return v.nerd || v.unicode || v.ascii || name;
+}
+
+/**
+ * The colour a registered glyph renders in — a {@link SemanticTokens} key, owned
+ * at registration. Resolve it through the active theme: `tokens[glyphColor(name)
+ * ?? 'fgMuted']`. Returns `undefined` for an unregistered name or a contract
+ * glyph (whose colour comes from the state-intent map, not the entry).
+ */
+export function glyphColor(name: string): GlyphColor | undefined {
   return registry.get(name)?.color;
 }
 
-// ─── intent → (glyph, colour) ────────────────────────────────────────────────
+// ── intent → (glyph, colour) ──────────────────────────────────────────────────
 // The framework owns the mapping from a semantic STATE name to its glyph + the
 // token that colours it. Components take an intent name (`state="installed"`);
 // they never accept a raw glyph or a raw colour from the consumer.
@@ -157,37 +221,7 @@ export const selectionIntents = {
 /** A selection intent name. */
 export type SelectionName = keyof typeof selectionIntents;
 
-// ─── OPTIONAL convenience pack — NOT registered automatically ─────────────────
-// The dev-tool domains most TUIs reuse. An app opts in with
-// `registerGlyphs(COMMON_DOMAINS)` and is free to extend or override any entry.
-// Each entry carries its own `color` (owned here, at registration — not per row).
-// Nerd codepoints mirror `assets/glyphs.json`; unicode/ascii degrade to text so
-// a fontless terminal shows `pg`, never tofu.
-export const COMMON_DOMAINS = {
-  database: { nerd: nf(0xf1c0), unicode: '▤', ascii: 'db', color: c.subtext1 },
-  mysql: { nerd: nf(0xe704), unicode: '▤', ascii: 'my', color: c.sapphire },
-  postgresql: { nerd: nf(0xe76e), unicode: '▤', ascii: 'pg', color: c.blue },
-  redis: { nerd: nf(0xe76d), unicode: '◆', ascii: 'rd', color: c.red },
-  docker: { nerd: nf(0xf308), unicode: '▦', ascii: 'dk', color: c.sky },
-  github: { nerd: nf(0xf09b), unicode: '◉', ascii: 'gh', color: c.subtext1 },
-  git: { nerd: nf(0xe702), unicode: '◈', ascii: 'gt', color: c.peach },
-  ssh: { nerd: nf(0xf015), unicode: '⌂', ascii: 'sh', color: c.yellow },
-  nodejs: { nerd: nf(0xe718), unicode: '❖', ascii: 'nd', color: c.green },
-  php: { nerd: nf(0xe73d), unicode: '❮', ascii: 'ph', color: c.mauve },
-  python: { nerd: nf(0xe73c), unicode: '❯', ascii: 'py', color: c.yellow },
-  vim: { nerd: nf(0xe7c5), unicode: '✱', ascii: 'vi', color: c.green },
-  apple: { nerd: nf(0xf179), unicode: '◇', ascii: 'mac', color: c.subtext1 },
-  linux: { nerd: nf(0xf17c), unicode: '△', ascii: 'lx', color: c.yellow },
-  ubuntu: { nerd: nf(0xf31b), unicode: '○', ascii: 'ub', color: c.peach },
-  font: { nerd: nf(0xf031), unicode: 'ƒ', ascii: 'ft', color: c.subtext1 },
-  ai: { nerd: nf(0xf2db), unicode: '▚', ascii: 'ai', color: c.lavender },
-  bolt: { nerd: nf(0xf0e7), unicode: '↯', ascii: '!', color: c.peach },
-} satisfies Record<string, GlyphVariants>;
-
-/** A domain name from the optional {@link COMMON_DOMAINS} pack. */
-export type CommonDomainName = keyof typeof COMMON_DOMAINS;
-
-// ─── Box-drawing ───────────────────────────────────────────────────────────
+// ── Box-drawing ───────────────────────────────────────────────────────────────
 
 /** A complete set of box-drawing characters for one border style. */
 export interface BoxChars {
@@ -222,7 +256,7 @@ export function boxChars(style: BoxStyleName, set: IconSet): BoxChars {
   return boxStyles[style];
 }
 
-// ─── Spinner & blocks ────────────────────────────────────────────────────────
+// ── Spinner & blocks ────────────────────────────────────────────────────────
 
 /** Spinner frames per icon set. Braille for nerd/unicode, classic for ascii. */
 export const spinnerFrames = {
@@ -247,10 +281,25 @@ export const blocks = {
 /**
  * Horizontal eighth-block ramp — the sub-cell material for a determinate
  * {@link ProgressBar}. Indexed by eighths filled (`0` = empty, `8` = a full
- * cell `█`). Left-to-right partials, the same family as {@link blocks}, so the
- * bar stays inside the one sanctioned "gradient".
- *
- * The `ascii` icon set has no partials — a bar there fills in whole `#` cells
- * and drops the fractional eighth (see `ProgressBar`).
+ * cell `█`). Left-to-right partials, the same family as {@link blocks}.
  */
 export const blocksH = [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█'] as const;
+
+// ── Tiers 1–3 re-exports — content the app opts into ─────────────────────────
+export {
+  COMMON_DOMAINS,
+  LANGUAGES,
+  DATABASES,
+  CLOUD,
+  EDITORS,
+  OS,
+  COMPANIES,
+  FRAMEWORKS,
+  FILES,
+  SOCIAL,
+  ACTIONS,
+  PACKAGES,
+  GLYPH_PACKS,
+} from './packs.js';
+export type { CommonDomainName } from './packs.js';
+export { nf, nfHas, nfChar, registerNerdIndex, NERD_INDEX, NERD_INDEX_SOURCES } from './nerdIndex.js';
