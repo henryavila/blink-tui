@@ -9,9 +9,9 @@
  * Run it: `npm run example` (or `npx tsx examples/svcd.tsx`).
  * Keys: ↑↓/j k move · tab switch pane · / search · a apply · d delete · ? help · q reset
  */
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Writable } from 'node:stream';
-import { render, Box, Text, useInput, useApp } from 'ink';
+import { render, Box, Text, useInput } from 'ink';
 import {
   ThemeProvider,
   detectIconSet,
@@ -67,7 +67,6 @@ function App({ interactive = true }: { interactive?: boolean } = {}): React.Reac
   const t = useTokens();
   const g = useGlyph();
   const iconSet = useIconSet();
-  const app = useApp();
   const { rows } = useStdoutDimensions();
 
   const [services, setServices] = useState<Service[]>(SERVICES);
@@ -78,6 +77,8 @@ function App({ interactive = true }: { interactive?: boolean } = {}): React.Reac
   const [query, setQuery] = useState('');
   const [syncing, setSyncing] = useState<string | null>(null);
   const [status, setStatus] = useState('ready');
+  const applyTimer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(applyTimer.current), []);
 
   const frame = useSpinnerFrame({ active: syncing != null });
   const frames = spinnerFor(iconSet);
@@ -104,8 +105,8 @@ function App({ interactive = true }: { interactive?: boolean } = {}): React.Reac
       return;
     }
     if (dialog) {
-      if (key.escape || input === 'n') setDialog(null);
-      else if (dialog === 'delete' && input === 'y' && current) {
+      if (key.escape || input === 'n' || input === 'N') setDialog(null);
+      else if (dialog === 'delete' && (input === 'y' || input === 'Y') && current) {
         const id = current.id;
         setServices((ss) => ss.filter((s) => s.id !== id));
         setDialog(null);
@@ -124,28 +125,28 @@ function App({ interactive = true }: { interactive?: boolean } = {}): React.Reac
       if (current.state === 'err') setDialog('error');
       else {
         const id = current.id;
+        const name = current.name;
         setSyncing(id);
-        setStatus('applying ' + current.name);
-        setTimeout(() => {
+        setStatus('applying ' + name);
+        clearTimeout(applyTimer.current);
+        applyTimer.current = setTimeout(() => {
           setServices((ss) =>
             ss.map((s) =>
               s.id === id ? { ...s, state: 'ok', detail: id === 'nginx' ? 'config in sync' : s.detail } : s,
             ),
           );
           setSyncing(null);
-          setStatus('applied');
+          setStatus('applied ' + name);
         }, 1600);
       }
     } else if (input === 'd' && current) setDialog('delete');
     else if (input === '?') setDialog('help');
     else if (input === 'q') {
-      if (services.length === SERVICES.length) app.exit();
-      else {
-        setServices(SERVICES);
-        setFocusIdx(2);
-        setQuery('');
-        setStatus('ready');
-      }
+      // reset the demo to its initial state (Ctrl+C exits the app)
+      setServices(SERVICES);
+      setFocusIdx(2);
+      setQuery('');
+      setStatus('ready');
     }
   }, { isActive: interactive });
 
@@ -177,12 +178,11 @@ function App({ interactive = true }: { interactive?: boolean } = {}): React.Reac
           ? [{ k: 'esc', desc: 'clear' }, { k: 'enter', desc: 'done' }]
           : [
               { k: 'tab', desc: 'pane' },
-              { k: 'enter', desc: 'open' },
               { k: '/', desc: 'search' },
               { k: 'a', desc: 'apply' },
               { k: 'd', desc: 'delete' },
               { k: '?', desc: 'help' },
-              { k: 'q', desc: 'quit' },
+              { k: 'q', desc: 'reset' },
             ];
 
   const right = `${g('check')} ${counts.ok ?? 0}  ${g('circle')} ${counts.pending ?? 0}  ${g('half')} ${counts.drift ?? 0}  ${g('cross')} ${counts.err ?? 0}`;
@@ -191,9 +191,10 @@ function App({ interactive = true }: { interactive?: boolean } = {}): React.Reac
     <Box flexDirection="column" height={rows}>
       {/* title bar */}
       <Box flexDirection="row" justifyContent="space-between" paddingX={1}>
-        <Text color={t.fgInverse} backgroundColor={t.bgInverse}>
-          {` ${blocks.cursor} svcd · built with blink `}
-        </Text>
+        <Box>
+          <Text color={t.fgInverse} backgroundColor={t.bgInverse}>{` ${blocks.cursor} svcd `}</Text>
+          <Text color={t.fgInverse} backgroundColor={t.bgInverse} dimColor>{'· built with blink '}</Text>
+        </Box>
         <Text color={t.fgDim}>{syncing ? `${spin} ${status}` : status}</Text>
       </Box>
 

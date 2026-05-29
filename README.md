@@ -33,9 +33,10 @@ domain glyphs, a live status bar, modal dialogs, search, and the braille spinner
 ║    ubuntu ◐ nginx                config out-of-date  ║│ path    28 containers · 4 stopped        │
 ║    node ✓ node · api               pid 4821 · :3000  ║│ port    —                                │
 ║    db ✗ grafana                     missing on host  ║│ ↳ actions                                │
-║    ssh ✓ ssh-agent                    3 keys loaded  ║│ ↯ a  apply now    ✗ d  remove            │
+║    ssh ✓ ssh-agent                    3 keys loaded  ║│ ↯ a  apply now                           │
+║                                                      ║│ ✗ d  remove                              │
 ╚══════════════════════════════════════════════════════╝└──────────────────────────────────────────┘
-  tab  pane    enter  open    /  search    a  apply    d  delete    ?  help    q ✓ 4  ◯ 1  ◐ 1  ✗ 1
+  tab  pane    /  search    a  apply    d  delete    ?  help    q  reset         ✓ 4  ◯ 1  ◐ 1  ✗ 1
 ```
 
 Run it in your terminal (full colour + Nerd Font glyphs) and drive it with the
