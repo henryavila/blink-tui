@@ -25,15 +25,16 @@ design target — two panes, a focused-pane border recolour, a list with state +
 domain glyphs, a live status bar, modal dialogs, search, and the braille spinner:
 
 ```
-  ▎ svcd · built with blink                                                                   ready
+ ▎ svcd · built with blink                                                                    ready
 ╔═ services (7) ═══════════════════════════════════════╗┌─ detail ─────────────────────────────────┐
-║    pg ✓ postgres@14.10                 data/pg/main  ║│ docker  docker                           │
-║    redis ✓ redis@7.2                     /var/redis  ║│                                          │
-║  ▶  docker ◯ docker       28 containers · 4 stopped  ║│ state   ◯ starting                       │
-║    ubuntu ◐ nginx                config out-of-date  ║│ path    28 containers · 4 stopped        │
-║    node ✓ node · api               pid 4821 · :3000  ║│ port    —                                │
-║    db ✗ grafana                     missing on host  ║│ ↳ actions                                │
-║    ssh ✓ ssh-agent                    3 keys loaded  ║│ ↯ a  apply now                           │
+║    ✓ postgres@14.10                    data/pg/main  ║│ docker                                   │
+║    ✓ redis@7.2                           /var/redis  ║│                                          │
+║  ▸ ◯ docker               28 containers · 4 stopped  ║│ state   ◯ starting                       │
+║    ◐ nginx                       config out-of-date  ║│ path    28 containers · 4 stopped        │
+║    ✓ node · api                    pid 4821 · :3000  ║│ port    —                                │
+║    ✗ grafana                        missing on host  ║│                                          │
+║    ✓ ssh-agent                        3 keys loaded  ║│ ↳ actions                                │
+║                                                      ║│ ↯ a  apply now                           │
 ║                                                      ║│ ✗ d  remove                              │
 ╚══════════════════════════════════════════════════════╝└──────────────────────────────────────────┘
   tab  pane    /  search    a  apply    d  delete    ?  help    q  reset         ✓ 4  ◯ 1  ◐ 1  ✗ 1
@@ -134,7 +135,7 @@ suggestions; they are what makes blink apps look like blink apps.
   No absolute positioning, no z-index. Target window 100×30; mobile-mosh
   fallback 60×20 (read `useStdoutDimensions()` to switch layouts).
 - **Keyboard only.** No mouse, no hover, no scroll. Focus is character-based:
-  the `▶` caret, a surface fill, or a recoloured (lavender) border.
+  the `▸` caret, a surface fill, or a recoloured (lavender) border.
 - **One animation.** The cursor blinks at 1 Hz, step-end (`useBlink`). A spinner
   may cycle (`useSpinnerFrame` + `Spinner`). Nothing else moves — no fades, no
   transitions, no transforms.
@@ -192,7 +193,7 @@ Override env vars: `BLINK_ICON_SET=nerd|unicode|ascii`, `BLINK_NERD_FONT=1|0`,
 | component | what |
 |---|---|
 | `Pane` | box-drawn rectangle with a title inside the top border; `focused`/`variant` drive weight + colour |
-| `List` / `ListRow` | rows with `▶` focus caret, state + domain glyphs, right-aligned meta, selection fill |
+| `List` / `ListRow` | rows with `▸` focus caret, state + domain glyphs, right-aligned meta, selection fill |
 | `Footer` | the always-visible bottom hotkey bar; inverse-video key chips + a right status slot |
 | `Input` / `Cursor` | single-line field with the blinking `▎` cursor (presentational — wire keys with Ink's `useInput`) |
 | `Dialog` | centred double-border modal; the primary action renders in inverse-accent |

@@ -31,7 +31,7 @@ export const stateGlyphs = {
 
 /** Navigation glyphs — focus carets, expand chevrons, relation arrows. */
 export const navGlyphs = {
-  focus: { nerd: '▶', unicode: '▶', ascii: '>' },
+  focus: { nerd: '▸', unicode: '▸', ascii: '>' },
   collapsed: { nerd: '▸', unicode: '▸', ascii: '>' },
   expanded: { nerd: '▾', unicode: '▾', ascii: 'v' },
   depends: { nerd: '↳', unicode: '↳', ascii: '\\>' },

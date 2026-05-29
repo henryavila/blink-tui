@@ -189,8 +189,12 @@ function App({ interactive = true }: { interactive?: boolean } = {}): React.Reac
 
   const right = `${g('check')} ${counts.ok ?? 0}  ${g('circle')} ${counts.pending ?? 0}  ${g('half')} ${counts.drift ?? 0}  ${g('cross')} ${counts.err ?? 0}`;
 
+  // Reserve one row: filling the full terminal height makes Ink's output height
+  // ≥ stdout.rows, which switches it to a full-screen clearTerminal on every
+  // render (visible flicker on each keypress). One spare line keeps it on the
+  // incremental eraseLines path.
   return (
-    <Box flexDirection="column" height={rows}>
+    <Box flexDirection="column" height={Math.max(1, rows - 1)}>
       {/* title bar */}
       <Box flexDirection="row" justifyContent="space-between" paddingX={1}>
         <Box>
@@ -317,7 +321,9 @@ if (invokedDirectly && process.env.BLINK_DEMO_SNAPSHOT === '1') {
     },
   }) as Writable & { columns: number; rows: number; isTTY?: boolean };
   sink.columns = 100;
-  sink.rows = 30;
+  // 31 rows so the app's reserved-spare-line layout still draws the full 30-row
+  // design target into the snapshot (see the height={rows - 1} note in App).
+  sink.rows = 31;
   const iconSet = await detectIconSet();
   const instance = render(
     <ThemeProvider iconSet={iconSet}>

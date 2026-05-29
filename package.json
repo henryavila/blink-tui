@@ -40,6 +40,9 @@
     "example:snapshot": "BLINK_DEMO_SNAPSHOT=1 BLINK_ICON_SET=unicode FORCE_COLOR=3 tsx examples/svcd.tsx",
     "lint:contract": "node scripts/check-contract.mjs"
   },
+  "dependencies": {
+    "string-width": "^7.2.0"
+  },
   "peerDependencies": {
     "ink": "^5.0.0",
     "react": "^18.0.0"

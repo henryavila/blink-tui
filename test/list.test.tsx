@@ -25,10 +25,10 @@ test('renders every label, the focus caret on the focused row, and meta', () => 
   expect(frame).toContain('job-queue');
 
   // the unicode focus caret marks the focused row
-  expect(frame).toContain('▶');
+  expect(frame).toContain('▸');
 
   // the caret sits on the focused row's line, beside its label
-  const caretLine = frame.split('\n').find((line) => line.includes('▶')) ?? '';
+  const caretLine = frame.split('\n').find((line) => line.includes('▸')) ?? '';
   expect(caretLine).toContain('redis-cache');
 
   // a meta string is pushed to the right
@@ -44,9 +44,9 @@ test('ascii icon set falls back to ">" for the focus caret', () => {
 
   const frame = lastFrame() ?? '';
 
-  // ascii caret instead of the unicode ▶
+  // ascii caret instead of the unicode ▸
   expect(frame).toContain('>');
-  expect(frame).not.toContain('▶');
+  expect(frame).not.toContain('▸');
 
   const caretLine = frame.split('\n').find((line) => line.includes('>')) ?? '';
   expect(caretLine).toContain('production-db');
@@ -101,5 +101,5 @@ test('renders a selected row without a caret and keeps its label', () => {
   const frame = lastFrame() ?? '';
   expect(frame).toContain('production-db');
   // nothing is focused, so no caret anywhere
-  expect(frame).not.toContain('▶');
+  expect(frame).not.toContain('▸');
 });

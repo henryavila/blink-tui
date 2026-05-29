@@ -20,7 +20,7 @@ designing anything. The short version:
 - Dark background `#1e1e2e` (Catppuccin Mocha base). No gradients, images, or blur.
 - Every border is a Unicode box-drawing glyph — **never** CSS border/radius/outline.
 - Flexbox only. No grid, no absolute positioning, no z-index in app screens.
-- Keyboard-only. Focus is `▶` / inverse video / border recolour — never a focus ring.
+- Keyboard-only. Focus is `▸` / inverse video / border recolour — never a focus ring.
 - No shadows, no transforms, no transitions. Only motion: cursor blink + spinner.
 - No emoji, no SVG icons. Status is carried by glyphs from `assets/glyphs.json`.
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Spacer, Text } from 'ink';
+import { Box, Text } from 'ink';
 import { useTokens } from '../theme/context.js';
 import { useGlyph } from '../glyphs/useGlyph.js';
 import { cellWidth } from '../textWidth.js';
@@ -30,7 +30,7 @@ export interface ListRowData {
 
 export interface ListRowProps {
   row: ListRowData;
-  /** Carries the `▶` caret + `bgFocused` fill. Wins over `selected`. */
+  /** Carries the `▸` caret + `bgFocused` fill. Wins over `selected`. */
   focused?: boolean;
   /** Draws the `bgSelected` fill (only when not also focused). */
   selected?: boolean;
@@ -60,8 +60,8 @@ export interface ListProps {
  *
  * Each glyph column is a **fixed-width cell** (truncating, never wrapping), so
  * labels stay column-aligned no matter how wide a row's domain/state glyph (or
- * its multi-char `ascii`/`unicode` fallback) renders. The caret cell is wide
- * enough to hold the two-cell `▶`, so a focused row never shifts its neighbours.
+ * its multi-char `ascii`/`unicode` fallback) renders. The caret cell is sized to
+ * the focus glyph's own width, so a focused row never shifts its neighbours.
  */
 export function ListRow({
   row,
@@ -81,47 +81,62 @@ export function ListRow({
       : undefined;
 
   // Fall back to the row's own content width when used outside <List>.
-  const caretW = caretWidth ?? Math.max(2, cellWidth(g('focus')));
+  const caretW = caretWidth ?? Math.max(1, cellWidth(g('focus')));
   const domainW = domainWidth ?? (row.domain ? cellWidth(row.domain) : 0);
   const glyphW = glyphWidth ?? Math.max(1, cellWidth(row.glyph ?? ' '));
 
-  // Ink's <Box> has no `backgroundColor` (terminals have no box background);
-  // the fill is painted onto the <Text> runs themselves — the contract's
-  // "selection fill" applied via `backgroundColor` on text, used sparingly.
+  // Ink only paints `backgroundColor` behind <Text> glyphs — a <Box> has no
+  // fill — so a focused/selected row's highlight is built as bg-coloured runs
+  // end to end: each fixed-width cell padded to fill, the column gaps and
+  // left/right insets as bg spaces, and a grow-to-fill spacer carrying the same
+  // bg. The whole row then reads as one continuous band instead of striping
+  // only the text. (Unselected rows pass `undefined`, so spacing is identical.)
+  // Pad to a fixed cell width with spaces that carry the row background. We pad
+  // *inside* the <Text> rather than wrapping each cell in a fixed-width <Box>:
+  // a <Box> can't hold a background, so any width it pads beyond the glyph would
+  // be an uncoloured hole in the highlight band. Padding here keeps every cell
+  // exactly `w` wide AND fully bg-filled, so adjacent cells form one band.
+  const cell = (s: string, w: number): string => s + ' '.repeat(Math.max(0, w - cellWidth(s)));
+
   return (
-    <Box flexDirection="row" paddingX={1} gap={1}>
-      <Box width={caretW} flexShrink={0}>
-        <Text color={tokens.accent} backgroundColor={backgroundColor} wrap="truncate">
-          {focused ? g('focus') : ' '}
-        </Text>
-      </Box>
+    <Box flexDirection="row">
+      <Text backgroundColor={backgroundColor}> </Text>
+      <Text color={tokens.accent} backgroundColor={backgroundColor} wrap="truncate">
+        {cell(focused ? g('focus') : ' ', caretW)}
+      </Text>
+      <Text backgroundColor={backgroundColor}> </Text>
       {domainW > 0 ? (
-        <Box width={domainW} flexShrink={0}>
+        <>
           <Text color={row.domainColor ?? tokens.fgMuted} backgroundColor={backgroundColor} wrap="truncate">
-            {row.domain ?? ''}
+            {cell(row.domain ?? '', domainW)}
           </Text>
-        </Box>
+          <Text backgroundColor={backgroundColor}> </Text>
+        </>
       ) : null}
       {/* The state-glyph cell is always present (a blank space when the row has
-          no glyph), so labels stay column-aligned down the list — the web kit's
-          `{row.glyph || " "}`. Without it, glyph-less rows would slide one cell
-          left of their neighbours. */}
-      <Box width={glyphW} flexShrink={0}>
-        <Text color={row.glyphColor ?? tokens.fg} backgroundColor={backgroundColor} wrap="truncate">
-          {row.glyph ?? ' '}
-        </Text>
-      </Box>
+          no glyph), so labels stay column-aligned down the list. */}
+      <Text color={row.glyphColor ?? tokens.fg} backgroundColor={backgroundColor} wrap="truncate">
+        {cell(row.glyph ?? ' ', glyphW)}
+      </Text>
+      <Text backgroundColor={backgroundColor}> </Text>
       <Text color={tokens.fg} backgroundColor={backgroundColor} wrap="truncate">
         {row.label}
       </Text>
+      {/* Grow-to-fill spacer carrying the row background (the contract's
+          selection fill), so the band reaches the meta / right edge. flexBasis=0
+          + minWidth=0 mean its 200-space content claims no base width and never
+          squeezes the label/meta — it only fills slack. height=1 + overflow
+          clips the spaces to one row WITHOUT a truncation `…` (the Pane
+          border-filler trick); `wrap="truncate"` would inject an ellipsis. */}
+      <Box flexGrow={1} flexBasis={0} minWidth={0} height={1} overflow="hidden">
+        <Text backgroundColor={backgroundColor}>{' '.repeat(200)}</Text>
+      </Box>
       {row.meta ? (
-        <>
-          <Spacer />
-          <Text color={tokens.fgDim} backgroundColor={backgroundColor} wrap="truncate">
-            {row.meta}
-          </Text>
-        </>
+        <Text color={tokens.fgDim} backgroundColor={backgroundColor} wrap="truncate">
+          {row.meta}
+        </Text>
       ) : null}
+      <Text backgroundColor={backgroundColor}> </Text>
     </Box>
   );
 }
@@ -139,9 +154,9 @@ export function List({ rows, focusedId, selectedIds }: ListProps): React.ReactEl
   const g = useGlyph();
   const sel = selectedIds ?? new Set<string>();
 
-  // The caret must hold the two-cell ▶ on the focused row (string-width reports
-  // it as one, but most terminals draw it as two), so every row reserves ≥2.
-  const caretWidth = Math.max(2, cellWidth(g('focus')));
+  // Caret column = the focus glyph's own width (1 for the narrow '▸', 2 for a
+  // wide caret), reserved on every row so the focused row never shifts.
+  const caretWidth = Math.max(1, cellWidth(g('focus')));
   const domainWidth = rows.reduce((m, r) => Math.max(m, r.domain ? cellWidth(r.domain) : 0), 0);
   const glyphWidth = rows.reduce((m, r) => Math.max(m, cellWidth(r.glyph ?? ' ')), 1);
 

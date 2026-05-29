@@ -13,7 +13,7 @@ const STATE = {
 };
 
 const NAV = {
-  focus:     "▶",
+  focus:     "▸", // width-1 caret: a wide ▶ leaves an unstyled cell in a terminal selection fill
   collapsed: "▸",
   expanded:  "▾",
   depends:   "↳",

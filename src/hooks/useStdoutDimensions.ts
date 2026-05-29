@@ -12,6 +12,11 @@ export interface Dimensions {
  * blink's design target is 100×30; the mobile-mosh fallback is 60×20. Layouts
  * read this to switch between the full multi-pane view and a stacked one.
  * Falls back to 80×24 when the stream isn't a TTY (pipes, CI).
+ *
+ * Tip: size your root box to `rows - 1`, not `rows`. An output exactly as tall
+ * as the terminal makes Ink redraw with a full-screen clear every render
+ * (visible flicker on each keypress); one spare line keeps it on the smooth
+ * incremental path.
  */
 export function useStdoutDimensions(): Dimensions {
   const { stdout } = useStdout();
