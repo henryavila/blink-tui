@@ -658,7 +658,8 @@ function App({
   // under overflow:hidden in Ink — it expands to the child and overlaps the
   // chrome. A fixed height clips correctly; we scroll by offsetting the content.
   const totalH = Math.max(1, rows - 1);
-  const viewportH = Math.max(1, totalH - 2);
+  // header (1) + footer (its 1-cell top margin + 1-cell bar = 2) = 3 rows of chrome.
+  const viewportH = Math.max(1, totalH - 3);
 
   const contentRef = useRef<DOMElement>(null);
   const [ch, setCh] = useState(0);
