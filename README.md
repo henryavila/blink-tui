@@ -18,6 +18,38 @@ the one motion the contract permits — accented in lavender.
 
 ---
 
+## what it looks like
+
+`svcd`, the bundled reference app, exercises every primitive at the 100×30
+design target — two panes, a focused-pane border recolour, a list with state +
+domain glyphs, a live status bar, modal dialogs, search, and the braille spinner:
+
+```
+  ▎ svcd · built with blink                                                                   ready
+╔═ services (7) ═══════════════════════════════════════╗┌─ detail ─────────────────────────────────┐
+║    pg ✓ postgres@14.10                 data/pg/main  ║│ docker  docker                           │
+║    redis ✓ redis@7.2                     /var/redis  ║│                                          │
+║  ▶  docker ◯ docker       28 containers · 4 stopped  ║│ state   ◯ starting                       │
+║    ubuntu ◐ nginx                config out-of-date  ║│ path    28 containers · 4 stopped        │
+║    node ✓ node · api               pid 4821 · :3000  ║│ port    —                                │
+║    db ✗ grafana                     missing on host  ║│ ↳ actions                                │
+║    ssh ✓ ssh-agent                    3 keys loaded  ║│ ↯ a  apply now    ✗ d  remove            │
+╚══════════════════════════════════════════════════════╝└──────────────────────────────────────────┘
+  tab  pane    enter  open    /  search    a  apply    d  delete    ?  help    q ✓ 4  ◯ 1  ◐ 1  ✗ 1
+```
+
+Run it in your terminal (full colour + Nerd Font glyphs) and drive it with the
+keyboard — `↑↓`/`j k`, `tab`, `/`, `a`, `d`, `?`, `q`:
+
+```bash
+npm run example
+```
+
+`npm run example:snapshot > shot.ansi` writes a single colour frame you can
+`cat` or drop in docs (the block above is that frame, de-coloured for GitHub).
+
+---
+
 ## install
 
 ```bash

@@ -10,6 +10,7 @@
  * Keys: ↑↓/j k move · tab switch pane · / search · a apply · d delete · ? help · q reset
  */
 import React, { useState } from 'react';
+import { Writable } from 'node:stream';
 import { render, Box, Text, useInput, useApp } from 'ink';
 import {
   ThemeProvider,
@@ -62,7 +63,7 @@ const STATE_GLYPH: Record<ServiceState, { name: string; tokenKey: 'stateOk' | 's
 
 type DialogKind = null | 'delete' | 'help' | 'error';
 
-function App(): React.ReactElement {
+function App({ interactive = true }: { interactive?: boolean } = {}): React.ReactElement {
   const t = useTokens();
   const g = useGlyph();
   const iconSet = useIconSet();
@@ -146,7 +147,7 @@ function App(): React.ReactElement {
         setStatus('ready');
       }
     }
-  });
+  }, { isActive: interactive });
 
   const counts = services.reduce<Record<string, number>>((a, s) => {
     a[s.state] = (a[s.state] ?? 0) + 1;
@@ -294,13 +295,45 @@ function DialogLayer({ kind, current }: { kind: DialogKind; current: Service | u
 }
 
 const invokedDirectly = Boolean(process.argv[1] && /svcd\.(tsx|js)$/.test(process.argv[1]));
-if (invokedDirectly) {
+if (invokedDirectly && process.env.BLINK_DEMO_SNAPSHOT === '1') {
+  // Snapshot mode: render one static, non-interactive frame at the 100×30 design
+  // target into a buffer, then emit only the LAST frame to stdout. No raw mode,
+  // no screen-clear, no stacked frames — a pristine ANSI screenshot. Pair with
+  // FORCE_COLOR=3 to keep colours through a pipe.
+  const frames: string[] = [];
+  const sink = new Writable({
+    write(chunk, _enc, cb) {
+      frames.push(chunk.toString());
+      cb();
+    },
+  }) as Writable & { columns: number; rows: number; isTTY?: boolean };
+  sink.columns = 100;
+  sink.rows = 30;
   const iconSet = await detectIconSet();
-  render(
+  const instance = render(
+    <ThemeProvider iconSet={iconSet}>
+      <App interactive={false} />
+    </ThemeProvider>,
+    { stdout: sink as unknown as NodeJS.WriteStream, patchConsole: false },
+  );
+  setTimeout(() => {
+    instance.unmount();
+    process.stdout.write((frames.at(-1) ?? frames.join('')) + '\n');
+    process.exit(0);
+  }, 250);
+} else if (invokedDirectly) {
+  const iconSet = await detectIconSet();
+  const instance = render(
     <ThemeProvider iconSet={iconSet}>
       <App />
     </ThemeProvider>,
   );
+  // Headless verification hook: BLINK_DEMO_EXIT_MS=700 npm run example
+  // auto-unmounts after N ms so a PTY smoke-test exits instead of hanging.
+  const exitMs = Number(process.env.BLINK_DEMO_EXIT_MS);
+  if (Number.isFinite(exitMs) && exitMs > 0) {
+    setTimeout(() => instance.unmount(), exitMs);
+  }
 }
 
 export { App };

@@ -37,6 +37,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "example": "tsx examples/svcd.tsx",
+    "example:snapshot": "BLINK_DEMO_SNAPSHOT=1 BLINK_ICON_SET=unicode FORCE_COLOR=3 tsx examples/svcd.tsx",
     "lint:contract": "node scripts/check-contract.mjs"
   },
   "peerDependencies": {
