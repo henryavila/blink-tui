@@ -160,7 +160,9 @@ function App({ interactive = true }: { interactive?: boolean } = {}): React.Reac
     const isSyncing = syncing === s.id;
     return {
       id: s.id,
-      domain: g(s.domain),
+      // Domain glyphs are Nerd Font icons; their text fallbacks just echo the
+      // service name (`docker`, `redis`), so only show them in nerd mode.
+      domain: iconSet === 'nerd' ? g(s.domain) : undefined,
       domainColor: s.domainColor,
       glyph: isSyncing ? spin : g(sg.name),
       glyphColor: isSyncing ? t.stateInfo : t[sg.tokenKey],
@@ -192,7 +194,7 @@ function App({ interactive = true }: { interactive?: boolean } = {}): React.Reac
       {/* title bar */}
       <Box flexDirection="row" justifyContent="space-between" paddingX={1}>
         <Box>
-          <Text color={t.fgInverse} backgroundColor={t.bgInverse}>{` ${blocks.cursor} svcd `}</Text>
+          <Text color={t.fgInverse} backgroundColor={t.bgInverse}>{`${blocks.cursor} svcd `}</Text>
           <Text color={t.fgInverse} backgroundColor={t.bgInverse} dimColor>{'· built with blink '}</Text>
         </Box>
         <Text color={t.fgDim}>{syncing ? `${spin} ${status}` : status}</Text>
@@ -227,12 +229,17 @@ function App({ interactive = true }: { interactive?: boolean } = {}): React.Reac
 function Detail({ service }: { service: Service }): React.ReactElement {
   const t = useTokens();
   const g = useGlyph();
+  const iconSet = useIconSet();
   const sg = STATE_GLYPH[service.state];
   return (
     <Box flexDirection="column">
       <Text>
-        <Text color={service.domainColor}>{g(service.domain)}</Text>
-        {'  '}
+        {iconSet === 'nerd' ? (
+          <>
+            <Text color={service.domainColor}>{g(service.domain)}</Text>
+            {'  '}
+          </>
+        ) : null}
         <Text color={t.fg}>{service.name}</Text>
       </Text>
       <Text> </Text>
@@ -281,6 +288,7 @@ function DialogLayer({ kind, current }: { kind: DialogKind; current: Service | u
       <Dialog
         title="error"
         variant="error"
+        width={52}
         lines={[`${g('cross')} ${current ? current.name : 'service'} is missing on host`, "can't apply a service that isn't installed"]}
         actions={[{ key: 'enter', label: 'dismiss', primary: true }, { key: 'l', label: 'view log' }]}
       />

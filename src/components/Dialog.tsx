@@ -51,32 +51,36 @@ export function Dialog({
     <Box flexGrow={1} justifyContent="center" alignItems="center">
       <Box width={width} flexShrink={0}>
         <Pane title={title} variant={isError ? 'error' : 'double'} focused flexGrow={0}>
-          {/* blank line above the body */}
-          <Text> </Text>
-          {lines.map((line, i) => (
-            <Text key={i} color={tokens.fg}>
-              {line}
-            </Text>
-          ))}
-          {/* blank line below the body */}
-          <Text> </Text>
-          <Box flexDirection="row" gap={2}>
-            {actions.map((action, i) => (
-              <Box key={i} flexDirection="row" gap={1}>
-                {action.primary ? (
-                  <Text color={tokens.bg} backgroundColor={tokens.accent}>
-                    {' ' + action.key + ' '}
-                  </Text>
-                ) : (
-                  <Text color={tokens.fgMuted}>{' ' + action.key + ' '}</Text>
-                )}
-                <Text color={tokens.fgMuted}>{action.label}</Text>
-              </Box>
+          {/* Inner 1-cell gutter on top of the pane's own padding → a 2-cell
+              content inset, matching the design kit's nested padding. */}
+          <Box flexDirection="column" paddingX={1}>
+            {/* blank line above the body */}
+            <Text> </Text>
+            {lines.map((line, i) => (
+              <Text key={i} color={tokens.fg}>
+                {line}
+              </Text>
             ))}
-            <Spacer />
+            {/* blank line below the body */}
+            <Text> </Text>
+            <Box flexDirection="row" gap={2}>
+              {actions.map((action, i) => (
+                <Box key={i} flexDirection="row" gap={1}>
+                  {action.primary ? (
+                    <Text color={tokens.bg} backgroundColor={tokens.accent}>
+                      {' ' + action.key + ' '}
+                    </Text>
+                  ) : (
+                    <Text color={tokens.fgMuted}>{' ' + action.key + ' '}</Text>
+                  )}
+                  <Text color={tokens.fgMuted}>{action.label}</Text>
+                </Box>
+              ))}
+              <Spacer />
+            </Box>
+            {/* blank line below the actions, mirroring the prototype's symmetric padding */}
+            <Text> </Text>
           </Box>
-          {/* blank line below the actions, mirroring the prototype's symmetric padding */}
-          <Text> </Text>
         </Pane>
       </Box>
     </Box>
