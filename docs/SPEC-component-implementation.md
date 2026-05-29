@@ -455,13 +455,14 @@ export interface ProgressBarProps {
   value: number;        // 0..1, clamped
   width: number;        // cells
   color?: string;       // filled colour; default tokens.accent
-  trackColor?: string;  // empty colour; default tokens.fgDim
+  trackColor?: string;  // empty-rail colour; default tokens.border (surface1, the DS `bar-rest`)
 }
 ```
 
 **Algorithm:** `filled = clamp(value, 0, 1) * width` cells. Full cells =
 `floor(filled)` rendered `blocksH[8]` (`█`); the fractional cell = `blocksH[round(frac * 8)]`;
-the remainder are track (`blocksH[0]`). **ascii degrade:** the `ascii` icon set
+the remainder is a visible `░` rail (`blocks.light`) in the track colour, matching
+the DS `[████░░░░]` treatment. **ascii degrade:** the `ascii` icon set
 has no partials — render full cells as `#`, drop the fractional cell (`floor`),
 track as space. (Resolve via the icon set from context, like every other glyph.)
 

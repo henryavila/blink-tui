@@ -71,6 +71,10 @@ interface SeedState {
   progress: number;
   log: string[];
   showDialog: boolean;
+  /** Snapshot-only: render the search `Input` focused (rounded border) without
+   *  entering search mode, so the static frame showcases the rounded treatment
+   *  while the full hotkey footer stays visible. */
+  focusSearch?: boolean;
 }
 
 function App({
@@ -243,7 +247,7 @@ function App({
               title="search"
               value={query}
               placeholder="type to filter modules…"
-              focused={searching}
+              focused={searching || Boolean(seed?.focusSearch)}
             />
             <Text> </Text>
 
@@ -312,6 +316,7 @@ if (invokedDirectly && process.env.BLINK_DEMO_SNAPSHOT === '1') {
     progress: 0.62,
     log: ['gallery ready', 'tick 1: → processed batch 1', 'tick 2: → processed batch 2', 'tick 3: → processed batch 3'],
     showDialog: false,
+    focusSearch: true,
   };
   const iconSet = await detectIconSet();
   const instance = render(
