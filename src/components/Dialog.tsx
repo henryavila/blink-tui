@@ -13,11 +13,18 @@ export interface DialogAction {
   primary?: boolean;
 }
 
+/** Dialog emphasis, by purpose. `'default'` is a focused (lavender) modal. */
+export type DialogTone = 'default' | 'error';
+
 export interface DialogProps {
   /** Shown inside the top border. Keep ≤ 18 chars (it nests in the frame). */
   title: string;
-  /** `'error'` swaps the lavender double border for a red one. */
-  variant?: 'default' | 'error';
+  /**
+   * Semantic emphasis: `'default'` is a focused (lavender) modal, `'error'`
+   * recolours it red. The consumer never picks the shape — it is always the
+   * rounded house pane.
+   */
+  tone?: DialogTone;
   /** Body rows, one `<Text>` line each — the convenience for plain-text bodies. */
   lines?: string[];
   /** Rich body (a `List`, glyph rows, a small form). Wins over `lines` when both given. */
@@ -34,26 +41,26 @@ export interface DialogProps {
  * app renders `<Dialog/>` as a *full-screen replacement layer* instead of a
  * floating panel — it simply replaces focus.
  *
- * The frame is a fixed-width focused {@link Pane}: a lavender double border by
- * default, red for `variant="error"`. The body is a blank line, the supplied
- * `lines`, another blank line, then the actions row. The primary action's key
- * chip renders in inverse-accent video; the rest sit muted.
+ * The frame is a fixed-width rounded {@link Pane}: lavender (focus tone) by
+ * default, red for `tone="error"` — elevation is colour, never a heavier line.
+ * The body is a blank line, the supplied `lines`, another blank line, then the
+ * actions row. The primary action's key chip renders in inverse-accent video;
+ * the rest sit muted.
  */
 export function Dialog({
   title,
-  variant = 'default',
+  tone = 'default',
   lines = [],
   children,
   actions = [],
   width = 44,
 }: DialogProps): React.ReactElement {
   const tokens = useTokens();
-  const isError = variant === 'error';
 
   return (
     <Box flexGrow={1} justifyContent="center" alignItems="center">
       <Box width={width} flexShrink={0}>
-        <Pane title={title} variant={isError ? 'error' : 'double'} focused flexGrow={0}>
+        <Pane title={title} tone={tone === 'error' ? 'error' : 'focus'} flexGrow={0}>
           {/* Inner 1-cell gutter on top of the pane's own padding → a 2-cell
               content inset, matching the design kit's nested padding. */}
           <Box flexDirection="column" paddingX={1}>

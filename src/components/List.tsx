@@ -2,47 +2,58 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import { useTokens } from '../theme/context.js';
 import { useGlyph } from '../glyphs/useGlyph.js';
+import { stateGlyph, selectionIntents, glyphColor } from '../glyphs/glyphs.js';
 import { cellWidth } from '../textWidth.js';
 import { useListWindow } from '../hooks/useListWindow.js';
 
 /**
- * One row's worth of data. `glyph` and `domain` are **already-resolved strings**
- * — the caller resolves glyph names with `useGlyph()` / `glyph(name, set)` and
- * passes the rendered char (or text fallback) here. List stays dumb: it draws
- * what it's handed and never touches the glyph registry or the icon set for row
- * content. (The nav caret is the one exception — it's chrome, not data.)
+ * One row's worth of data — declared as **intent**, never style. A row says what
+ * it MEANS (`state="installed"`, `selected`, `domain="postgresql"`) and the
+ * framework resolves the glyph and its colour from the house tokens. The
+ * consumer never passes a raw glyph or a raw colour. (The focus caret is the one
+ * exception — it is chrome, not data.)
  */
 export interface ListRowData {
   /** Stable identity, used for focus/selection lookups and React keys. */
   id: string;
-  /** The row's primary text, in `fg`. */
+  /** The row's primary text, in `fg` (or `fgDim` when `muted`). */
   label: string;
-  /** Optional resolved state glyph (e.g. `✓`), drawn before the label. */
-  glyph?: string;
-  /** Colour for `glyph`. Defaults to `tokens.fg`. */
-  glyphColor?: string;
-  /** Optional right-aligned secondary text, in `fgDim`. */
-  meta?: string;
-  /** Optional resolved domain glyph (e.g. `db`), drawn before the state glyph. */
+  /**
+   * Semantic status name → the framework draws its glyph + colour:
+   * `installed | ok | done | missing | error | drift | partial | idempotent |
+   * pending | warn | info`. See `stateGlyph()`.
+   */
+  state?: string;
+  /** Selection intent → `☑ / ☐`. Presence of the field (even `false`) opts the row into the checkbox column. */
+  selected?: boolean;
+  /** Required, non-toggle (implies selected) → `▣`. */
+  locked?: boolean;
+  /** A **registered** domain glyph name → the glyph + its colour, owned at registration. */
   domain?: string;
-  /** Colour for `domain`. Defaults to `tokens.fgMuted`. */
-  domainColor?: string;
+  /** Right-aligned consequence / aside text (content), in `fgDim`. */
+  meta?: string;
+  /** De-emphasise the whole row (e.g. a disabled / required label). */
+  muted?: boolean;
 }
 
 export interface ListRowProps {
   row: ListRowData;
-  /** Carries the `▸` caret + `bgFocused` fill. Wins over `selected`. */
+  /** Carries the `►` caret + `bgFocused` fill. Wins over `selected`. */
   focused?: boolean;
   /** Draws the `bgSelected` fill (only when not also focused). */
   selected?: boolean;
   /**
-   * Fixed cell widths so the glyph columns line up down the whole list. `List`
-   * computes these from the widest cell in each column; when a `ListRow` is used
-   * standalone they default to its own content width.
+   * Which intent columns this row reserves, and their fixed cell widths, so the
+   * glyph columns line up down the whole list. `List` computes these from the
+   * widest cell in each column; a standalone `ListRow` derives them from itself.
    */
+  showCheckbox?: boolean;
+  showState?: boolean;
+  showDomain?: boolean;
   caretWidth?: number;
+  checkboxWidth?: number;
+  stateWidth?: number;
   domainWidth?: number;
-  glyphWidth?: number;
 }
 
 export interface ListProps {
@@ -53,15 +64,27 @@ export interface ListProps {
   selectedIds?: Set<string>;
   /**
    * Max rows to render, including any overflow-marker rows. Omit to render every
-   * row (today's behaviour). When set and `rows` exceeds it, List shows a window
-   * that always contains `focusedId` and scrolls as focus nears an edge —
-   * keyboard-paged, never mouse-scrolled (see the contract).
+   * row. When set and `rows` exceeds it, List shows a window that always contains
+   * `focusedId` and scrolls as focus nears an edge — keyboard-paged, never
+   * mouse-scrolled (see the contract).
    */
   height?: number;
   /** Context rows kept before the window scrolls. Default 0 (scroll at the edge). */
   scrolloff?: number;
   /** Draw `▴ N more` / `▾ N more` on overflowing sides. Default true. */
   overflowMarkers?: boolean;
+}
+
+/** Does this row opt into the checkbox column? Presence of `selected` (even false) or `locked` does. */
+function hasSelectionIntent(row: ListRowData): boolean {
+  return row.locked === true || 'selected' in row;
+}
+
+/** Resolve a row's selection intent → glyph name + colour token, or null when it has none. */
+function rowSelection(row: ListRowData) {
+  if (row.locked) return selectionIntents.locked;
+  if (!('selected' in row)) return null;
+  return row.selected ? selectionIntents.selected : selectionIntents.unselected;
 }
 
 /** The dim `▴ N more` / `▾ N more` chrome row drawn on a clipped side. */
@@ -76,81 +99,106 @@ function OverflowMarker({ glyph, count }: { glyph: string; count: number }): Rea
 }
 
 /**
- * A single list row — a caret column, optional domain + state glyphs, the
- * label, then the meta pushed to the right. The focused row fills with
- * `bgFocused`; a selected-but-unfocused row fills with `bgSelected`. No hover,
- * by contract.
+ * A single list row — a caret column, then the optional intent columns
+ * (checkbox · state · domain), the label, then the meta pushed right. The
+ * focused row fills with `bgFocused`; a selected-but-unfocused row fills with
+ * `bgSelected`. No hover, by contract.
  *
- * Each glyph column is a **fixed-width cell** (truncating, never wrapping), so
- * labels stay column-aligned no matter how wide a row's domain/state glyph (or
- * its multi-char `ascii`/`unicode` fallback) renders. The caret cell is sized to
- * the focus glyph's own width, so a focused row never shifts its neighbours.
+ * Each intent column is a **fixed-width cell** (truncating, never wrapping), so
+ * labels stay column-aligned no matter how wide a row's glyph (or its multi-char
+ * `ascii`/`unicode` fallback) renders. The glyph and its colour are resolved
+ * here from the row's intent — the consumer hands over meaning, not pixels.
  */
 export function ListRow({
   row,
   focused = false,
   selected = false,
+  showCheckbox,
+  showState,
+  showDomain,
   caretWidth,
+  checkboxWidth,
+  stateWidth,
   domainWidth,
-  glyphWidth,
 }: ListRowProps): React.ReactElement {
   const tokens = useTokens();
   const g = useGlyph();
 
-  const backgroundColor = focused
-    ? tokens.bgFocused
-    : selected
-      ? tokens.bgSelected
-      : undefined;
+  const backgroundColor = focused ? tokens.bgFocused : selected ? tokens.bgSelected : undefined;
 
-  // Fall back to the row's own content width when used outside <List>.
+  // Resolve intent → glyph string + colour for each column.
+  const sel = rowSelection(row);
+  const checkStr = sel ? g(sel.glyph) : '';
+  const checkColor = row.muted ? tokens.fgDim : sel ? tokens[sel.token] : tokens.fgDim;
+
+  const st = row.state ? stateGlyph(row.state) : null;
+  const stateStr = st ? g(st.glyph) : '';
+  const stateColor = row.muted ? tokens.fgDim : st ? tokens[st.token] : tokens.fg;
+
+  const domainStr = row.domain ? g(row.domain) : '';
+  const domainColor = row.muted
+    ? tokens.fgDim
+    : row.domain
+      ? glyphColor(row.domain) ?? tokens.fgMuted
+      : tokens.fgMuted;
+
+  const labelColor = row.muted ? tokens.fgDim : tokens.fg;
+
+  // Column presence / widths: use the list-wide values when given, else derive
+  // from this row alone (standalone <ListRow> outside a <List>).
+  const wantCheckbox = showCheckbox ?? hasSelectionIntent(row);
+  const wantState = showState ?? row.state != null;
+  const wantDomain = showDomain ?? row.domain != null;
   const caretW = caretWidth ?? Math.max(1, cellWidth(g('focus')));
-  const domainW = domainWidth ?? (row.domain ? cellWidth(row.domain) : 0);
-  const glyphW = glyphWidth ?? Math.max(1, cellWidth(row.glyph ?? ' '));
+  const checkW = checkboxWidth ?? Math.max(1, cellWidth(checkStr));
+  const stateW = stateWidth ?? Math.max(1, cellWidth(stateStr));
+  const domainW = domainWidth ?? Math.max(1, cellWidth(domainStr));
 
-  // Ink only paints `backgroundColor` behind <Text> glyphs — a <Box> has no
-  // fill — so a focused/selected row's highlight is built as bg-coloured runs
-  // end to end: each fixed-width cell padded to fill, the column gaps and
-  // left/right insets as bg spaces, and a grow-to-fill spacer carrying the same
-  // bg. The whole row then reads as one continuous band instead of striping
-  // only the text. (Unselected rows pass `undefined`, so spacing is identical.)
-  // Pad to a fixed cell width with spaces that carry the row background. We pad
-  // *inside* the <Text> rather than wrapping each cell in a fixed-width <Box>:
-  // a <Box> can't hold a background, so any width it pads beyond the glyph would
-  // be an uncoloured hole in the highlight band. Padding here keeps every cell
-  // exactly `w` wide AND fully bg-filled, so adjacent cells form one band.
+  // Pad to a fixed cell width with spaces that carry the row background. Padding
+  // happens inside the <Text> (not via a fixed-width <Box>, which can't hold a
+  // background) so every cell is exactly `w` wide AND fully bg-filled — adjacent
+  // cells form one continuous highlight band rather than striping only the text.
   const cell = (s: string, w: number): string => s + ' '.repeat(Math.max(0, w - cellWidth(s)));
 
   return (
     <Box flexDirection="row">
       <Text backgroundColor={backgroundColor}> </Text>
       <Text color={tokens.accent} backgroundColor={backgroundColor} wrap="truncate">
-        {cell(focused ? g('focus') : ' ', caretW)}
+        {cell(focused ? g('focus') : '', caretW)}
       </Text>
       <Text backgroundColor={backgroundColor}> </Text>
-      {domainW > 0 ? (
+      {wantCheckbox ? (
         <>
-          <Text color={row.domainColor ?? tokens.fgMuted} backgroundColor={backgroundColor} wrap="truncate">
-            {cell(row.domain ?? '', domainW)}
+          <Text color={checkColor} backgroundColor={backgroundColor} wrap="truncate">
+            {cell(checkStr, checkW)}
           </Text>
           <Text backgroundColor={backgroundColor}> </Text>
         </>
       ) : null}
-      {/* The state-glyph cell is always present (a blank space when the row has
-          no glyph), so labels stay column-aligned down the list. */}
-      <Text color={row.glyphColor ?? tokens.fg} backgroundColor={backgroundColor} wrap="truncate">
-        {cell(row.glyph ?? ' ', glyphW)}
-      </Text>
-      <Text backgroundColor={backgroundColor}> </Text>
-      <Text color={tokens.fg} backgroundColor={backgroundColor} wrap="truncate">
+      {wantState ? (
+        <>
+          <Text color={stateColor} backgroundColor={backgroundColor} wrap="truncate">
+            {cell(stateStr, stateW)}
+          </Text>
+          <Text backgroundColor={backgroundColor}> </Text>
+        </>
+      ) : null}
+      {wantDomain ? (
+        <>
+          <Text color={domainColor} backgroundColor={backgroundColor} wrap="truncate">
+            {cell(domainStr, domainW)}
+          </Text>
+          <Text backgroundColor={backgroundColor}> </Text>
+        </>
+      ) : null}
+      <Text color={labelColor} backgroundColor={backgroundColor} wrap="truncate">
         {row.label}
       </Text>
-      {/* Grow-to-fill spacer carrying the row background (the contract's
-          selection fill), so the band reaches the meta / right edge. flexBasis=0
-          + minWidth=0 mean its 200-space content claims no base width and never
-          squeezes the label/meta — it only fills slack. height=1 + overflow
-          clips the spaces to one row WITHOUT a truncation `…` (the Pane
-          border-filler trick); `wrap="truncate"` would inject an ellipsis. */}
+      {/* Grow-to-fill spacer carrying the row background (the selection fill), so
+          the band reaches the meta / right edge. flexBasis=0 + minWidth=0 mean
+          its 200-space content claims no base width and never squeezes the
+          label/meta — it only fills slack. height=1 + overflow clips the spaces
+          to one row WITHOUT a truncation `…` (`wrap="truncate"` would inject one). */}
       <Box flexGrow={1} flexBasis={0} minWidth={0} height={1} overflow="hidden">
         <Text backgroundColor={backgroundColor}>{' '.repeat(200)}</Text>
       </Box>
@@ -166,12 +214,12 @@ export function ListRow({
 
 /**
  * A vertical stack of {@link ListRow}s — blink's plain list. Exactly one row may
- * be focused (`focusedId`); any number may be selected (`selectedIds`). Rows are
- * pure data ({@link ListRowData}); resolve glyph names before handing them over.
+ * be focused (`focusedId`); any number may be selection-filled (`selectedIds`).
+ * Rows are pure **intent** ({@link ListRowData}); the list resolves the glyphs.
  *
- * List sizes the caret / domain / state-glyph columns to the widest cell across
- * all rows and passes those widths down, so every row shares one grid — the fix
- * for ragged columns when glyphs fall back to variable-width text.
+ * List sizes the caret / checkbox / state / domain columns to the widest cell
+ * across all rows and passes those widths down, so every row shares one grid —
+ * the fix for ragged columns when glyphs fall back to variable-width text.
  */
 export function List({
   rows,
@@ -183,6 +231,11 @@ export function List({
 }: ListProps): React.ReactElement {
   const g = useGlyph();
   const sel = selectedIds ?? new Set<string>();
+
+  // Which intent columns any row needs.
+  const showCheckbox = rows.some(hasSelectionIntent);
+  const showState = rows.some((r) => r.state != null);
+  const showDomain = rows.some((r) => r.domain != null);
 
   // Window the rows when `height` is set. Omitting `height` passes `rows.length`,
   // which yields the full list with no markers — today's behaviour, unchanged.
@@ -199,8 +252,21 @@ export function List({
   // Column widths are measured across the FULL row set, not just the window, so
   // the grid stays put as a wide glyph scrolls in and out of view.
   const caretWidth = Math.max(1, cellWidth(g('focus')));
-  const domainWidth = rows.reduce((m, r) => Math.max(m, r.domain ? cellWidth(r.domain) : 0), 0);
-  const glyphWidth = rows.reduce((m, r) => Math.max(m, cellWidth(r.glyph ?? ' ')), 1);
+  const checkboxWidth = showCheckbox
+    ? rows.reduce((m, r) => {
+        const s = rowSelection(r);
+        return Math.max(m, s ? cellWidth(g(s.glyph)) : 1);
+      }, 1)
+    : 0;
+  const stateWidth = showState
+    ? rows.reduce((m, r) => {
+        const st = r.state ? stateGlyph(r.state) : null;
+        return Math.max(m, st ? cellWidth(g(st.glyph)) : 1);
+      }, 1)
+    : 0;
+  const domainWidth = showDomain
+    ? rows.reduce((m, r) => Math.max(m, r.domain ? cellWidth(g(r.domain)) : 1), 1)
+    : 0;
 
   const showAbove = overflowMarkers && aboveCount > 0;
   const showBelow = overflowMarkers && belowCount > 0;
@@ -214,9 +280,13 @@ export function List({
           row={row}
           focused={row.id === focusedId}
           selected={sel.has(row.id)}
+          showCheckbox={showCheckbox}
+          showState={showState}
+          showDomain={showDomain}
           caretWidth={caretWidth}
+          checkboxWidth={checkboxWidth}
+          stateWidth={stateWidth}
           domainWidth={domainWidth}
-          glyphWidth={glyphWidth}
         />
       ))}
       {showBelow ? <OverflowMarker glyph={g('moreBelow')} count={belowCount} /> : null}

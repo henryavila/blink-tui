@@ -4,18 +4,42 @@ import type { BoxProps } from 'ink';
 import { useIconSet, useTokens } from '../theme/context.js';
 import { boxChars, type BoxStyleName } from '../glyphs/glyphs.js';
 
-/** Pane border treatments, in the language of the design system. */
-export type PaneVariant = 'default' | 'rounded' | 'double' | 'error';
+/**
+ * Pane emphasis, by PURPOSE — the consumer declares what a pane *means*, blink
+ * draws it. There is exactly one border shape in the house style (single-line,
+ * rounded), so tone never changes the geometry, only the colour:
+ *
+ * - `resting` — a pane at rest (muted border).
+ * - `focus`   — the focused pane (border + title recoloured lavender).
+ * - `error`   — an error / destructive pane (border + title red).
+ */
+export type PaneTone = 'resting' | 'focus' | 'error';
+
+/**
+ * Legacy border treatments. Kept only so older call sites keep working while
+ * they migrate to {@link PaneTone}. `'double'` is gone from the house style and
+ * now renders as the rounded default; `'square'` is the one legacy shape opt-out.
+ * @deprecated pass `tone` instead.
+ */
+export type PaneVariant = 'default' | 'rounded' | 'square' | 'double' | 'error';
 
 export interface PaneProps {
-  /** Title shown inside the top border: `┌─ title ──────┐`. Keep ≤ 18 chars. */
+  /** Title shown inside the top border: `╭─ title ──────╮`. Keep ≤ 18 chars. */
   title?: string;
   /**
-   * Focused panes get a lavender border. With no explicit `variant`, focus also
-   * promotes the border to double-line (the contract's "elevation = weight").
+   * Semantic emphasis. The framework owns the border colour, the title colour,
+   * and the (always rounded) shape. Default `'resting'`.
+   */
+  tone?: PaneTone;
+  /**
+   * @deprecated use `tone="focus"`. A focused pane gets the lavender border.
+   * Kept as a back-compat alias; `tone` wins when both are set.
    */
   focused?: boolean;
-  /** Override the border treatment. */
+  /**
+   * @deprecated use `tone`. `'error'` ⇒ `tone="error"`, `'square'` ⇒ the legacy
+   * square shape; every other value falls through to the rounded house style.
+   */
   variant?: PaneVariant;
   /** Flex grow factor (default 1 — panes fill available space). */
   flexGrow?: number;
@@ -32,21 +56,23 @@ export interface PaneProps {
 
 function inkBorderStyle(style: BoxStyleName, ascii: boolean): NonNullable<BoxProps['borderStyle']> {
   if (ascii) return 'classic';
-  if (style === 'rounded') return 'round';
-  return style; // 'single' | 'double'
+  return style === 'rounded' ? 'round' : 'single';
 }
 
 /**
  * A box-drawn rectangle with an optional title in the top border — the
- * analogue of a "card" in blink (panes don't lift, round, or shadow).
+ * analogue of a "card" in blink (panes don't lift, shadow, or change shape).
  *
  * Borders are real box-drawing glyphs. Ink's native border renders the
  * full-height left/right sides and the bottom edge; the top edge is drawn by
  * hand so the title can sit *inside* it. The two halves share a width, so they
- * join into one continuous frame.
+ * join into one continuous frame. Focus and elevation are signalled by **border
+ * colour** alone — the shape is identical across tones, so the layout never
+ * shifts when a pane gains or loses focus.
  */
 export function Pane({
   title,
+  tone,
   focused = false,
   variant,
   flexGrow = 1,
@@ -60,28 +86,18 @@ export function Pane({
   const iconSet = useIconSet();
   const ascii = iconSet === 'ascii';
 
-  const isError = variant === 'error';
-  const style: BoxStyleName =
-    variant === 'rounded'
-      ? 'rounded'
-      : variant === 'double' || isError
-        ? 'double'
-        : focused
-          ? 'double'
-          : 'single';
+  // Resolve PURPOSE: prefer the semantic `tone`, then fall back to legacy props.
+  const t: PaneTone =
+    tone ?? (variant === 'error' ? 'error' : focused ? 'focus' : 'resting');
 
+  // Resolve SHAPE: always rounded, except the legacy `variant="square"` escape.
+  const style: BoxStyleName = variant === 'square' ? 'single' : 'rounded';
   const chars = boxChars(style, iconSet);
 
-  const borderColor = isError
-    ? tokens.stateErr
-    : focused
-      ? tokens.borderFocus
-      : tokens.border;
-  const titleColor = isError
-    ? tokens.stateErr
-    : focused
-      ? tokens.accent
-      : tokens.fgMuted;
+  const borderColor =
+    t === 'error' ? tokens.stateErr : t === 'focus' ? tokens.borderFocus : tokens.border;
+  const titleColor =
+    t === 'error' ? tokens.stateErr : t === 'focus' ? tokens.accent : tokens.fgMuted;
 
   return (
     <Box

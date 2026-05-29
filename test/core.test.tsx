@@ -7,7 +7,10 @@ import {
   mochaTokens,
   catppuccinMocha,
   glyph,
+  glyphColor,
   registerGlyphs,
+  COMMON_DOMAINS,
+  stateGlyph,
   boxChars,
   spinnerFor,
   blocks,
@@ -47,11 +50,17 @@ describe('glyphs (dual-mode)', () => {
     expect(glyph('half', 'ascii')).toBe('[~]');
   });
 
-  test('domain glyphs are Nerd Font PUA in nerd mode, text otherwise', () => {
-    const nerd = glyph('postgresql', 'nerd');
-    expect(nerd.codePointAt(0)).toBe(0xe76e);
-    expect(glyph('postgresql', 'unicode')).toBe('pg');
+  test('domain glyphs are app content — unregistered in core until opted in', () => {
+    // Not seeded in core: an unknown domain renders its own name, never tofu.
+    expect(glyph('postgresql', 'nerd')).toBe('postgresql');
+    // Opt into the common pack, then the same name resolves + carries its colour.
+    registerGlyphs(COMMON_DOMAINS);
+    expect(glyph('postgresql', 'nerd').codePointAt(0)).toBe(0xe76e);
+    // unicode degrades to a single-cell symbol, ascii to a 2-char code — both
+    // grid-safe, never tofu.
+    expect(glyph('postgresql', 'unicode')).toBe('▤');
     expect(glyph('postgresql', 'ascii')).toBe('pg');
+    expect(glyphColor('postgresql')).toBe(catppuccinMocha.blue);
   });
 
   test('unknown names render visibly (the name itself), never blank', () => {
@@ -63,11 +72,17 @@ describe('glyphs (dual-mode)', () => {
     expect(glyph('tailscale', 'unicode')).toBe('mesh');
   });
 
-  test('box chars: double/single unicode, collapse to ascii', () => {
-    expect(boxChars('double', 'unicode').tl).toBe('╔');
+  test('intent → glyph: a state name resolves to its glyph + colour token', () => {
+    expect(stateGlyph('installed')).toEqual({ glyph: 'check', token: 'stateOk' });
+    expect(stateGlyph('missing')).toEqual({ glyph: 'cross', token: 'stateErr' });
+    expect(stateGlyph('drift')).toEqual({ glyph: 'half', token: 'stateDrift' });
+    expect(stateGlyph('nope')).toBeNull();
+  });
+
+  test('box chars: single + rounded unicode, collapse to ascii (no double line)', () => {
     expect(boxChars('single', 'unicode').tl).toBe('┌');
     expect(boxChars('rounded', 'unicode').tl).toBe('╭');
-    expect(boxChars('double', 'ascii').tl).toBe('+');
+    expect(boxChars('rounded', 'ascii').tl).toBe('+');
     expect(boxChars('single', 'ascii').h).toBe('-');
   });
 

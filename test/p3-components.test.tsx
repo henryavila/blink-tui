@@ -9,10 +9,10 @@ import { Dialog } from '../src/components/Dialog.js';
 import { List, type ListRowData } from '../src/components/List.js';
 
 describe('Banner', () => {
-  test('renders text with an optional leading glyph', () => {
+  test('the framework draws the tone glyph (success → check) — no glyph prop', () => {
     const { lastFrame } = render(
       <ThemeProvider iconSet="unicode">
-        <Banner tone="success" glyph="✓" text="saved" />
+        <Banner tone="success" text="saved" />
       </ThemeProvider>,
     );
     const frame = lastFrame() ?? '';

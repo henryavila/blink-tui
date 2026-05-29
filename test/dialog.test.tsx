@@ -30,8 +30,9 @@ test('Dialog renders title, body lines, and action labels (unicode)', () => {
   expect(frame).toContain('delete');
   // the primary key chip keeps its 1-cell inverse-video padding ` N `
   expect(frame).toContain(' N  keep');
-  // default variant uses the double-line border (lavender focus)
-  expect(frame).toContain('╔');
+  // default tone is a focused (lavender) ROUNDED pane — never a double line
+  expect(frame).toContain('╭');
+  expect(frame).not.toContain('╔');
 });
 
 test('Dialog falls back to ascii border in ascii icon set', () => {
@@ -50,18 +51,18 @@ test('Dialog falls back to ascii border in ascii icon set', () => {
   const frame = lastFrame() ?? '';
   expect(frame).toContain('delete service');
   expect(frame).toContain('delete');
-  // ascii mode collapses every border style to + - |
+  // ascii mode collapses the rounded border to + - |
   expect(frame).toContain('+');
-  expect(frame).not.toContain('╔');
+  expect(frame).not.toContain('╭');
 });
 
-test('Dialog error variant uses a single (red) double border too', () => {
+test('Dialog error tone renders a red rounded pane (no double line)', () => {
   const { lastFrame } = render(
     <ThemeProvider iconSet="unicode">
       <Box height={12}>
         <Dialog
           title="fatal"
-          variant="error"
+          tone="error"
           lines={['disk full']}
           actions={[{ key: 'o', label: 'ok', primary: true }]}
         />
@@ -73,4 +74,6 @@ test('Dialog error variant uses a single (red) double border too', () => {
   expect(frame).toContain('fatal');
   expect(frame).toContain('disk full');
   expect(frame).toContain('ok');
+  expect(frame).toContain('╭');
+  expect(frame).not.toContain('╔');
 });

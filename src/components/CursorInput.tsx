@@ -39,9 +39,12 @@ export interface InputProps {
 
 /**
  * A single-line text field: a {@link Pane} wrapping one row of value (or
- * placeholder), with a {@link Cursor} trailing while focused. An error promotes
- * the border to red and prints a `✗ message` line below the pane. Value-driven
- * and presentational — the app feeds `value` and owns the keys.
+ * placeholder), with a {@link Cursor} trailing while focused. Value-driven and
+ * presentational — the app feeds `value` and owns the keys.
+ *
+ * INTENT, NOT STYLE: the consumer never picks a border treatment; the field
+ * derives its pane `tone` from its own state — `error` → red, `focused` →
+ * lavender, otherwise resting. An error also prints a `✗ message` line below.
  */
 export function Input({
   title,
@@ -53,12 +56,12 @@ export function Input({
   const tokens = useTokens();
   const g = useGlyph();
 
-  const variant = error ? 'error' : focused ? 'rounded' : 'default';
+  const tone = error ? 'error' : focused ? 'focus' : 'resting';
   const empty = value.length === 0;
 
   return (
     <Box flexDirection="column">
-      <Pane title={title} focused={focused} variant={variant} flexGrow={0}>
+      <Pane title={title} tone={tone} flexGrow={0}>
         <Box flexDirection="row">
           {empty ? (
             <Text color={tokens.fgDisabled}>{placeholder}</Text>

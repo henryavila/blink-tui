@@ -11,9 +11,17 @@
  */
 export type IconSet = 'nerd' | 'unicode' | 'ascii';
 
-/** A single glyph's three rendering variants. */
+/** A single glyph's three rendering variants, plus an optional owned colour. */
 export interface GlyphVariants {
   nerd: string;
   unicode: string;
   ascii: string;
+  /**
+   * The colour this glyph renders in, owned at registration (the "intent, not
+   * style" rule for domain glyphs). A hex from the palette; components read it
+   * via `glyphColor(name)` and fall back to a muted token when absent. State /
+   * nav contract glyphs leave this unset — their colour comes from the state
+   * intent map, not the glyph entry.
+   */
+  color?: string;
 }
