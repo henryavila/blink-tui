@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — Raw glyph index</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .card { gap: 8px; overflow: hidden; }
+  .api { white-space: pre; background: var(--bg-elevated); padding: 8px 10px;
+         color: var(--fg-muted); font-size: 12px; line-height: 1.55; }
+  .api .fn { color: var(--accent); } .api .str { color: var(--state-ok); }
+  .api .cm { color: var(--fg-faint); }
+  .src { display: flex; flex-direction: column; gap: 2px; }
+  .src .hd { color: var(--fg-faint); font-size: 11px; }
+  .igrid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 1px 5px; }
+  .icell { display: flex; align-items: baseline; gap: 0.6ch; padding: 1px 4px; white-space: nowrap; }
+  /* deliberately ALL muted — the raw index ships no curated colour */
+  .icell .g { font-size: 15px; line-height: 1; color: var(--fg-muted); width: 1.4ch; }
+  .icell .l { font-size: 10px; color: var(--fg-disabled); overflow: hidden; text-overflow: ellipsis; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="cap">tier 3 · raw index · name→codepoint for the whole Nerd Font · no fallback, no colour — a deliberate escape hatch</div>
+  <div class="api"><span class="fn">nf</span>(<span class="str">'fa-rocket'</span>)                              <span class="cm">// → the glyph, or '' if unknown</span>
+<span class="fn">registerGlyphs</span>({ deploy: { nf: <span class="str">'fa-rocket'</span> } })    <span class="cm">// muted, nerd-only, ascii derived</span></div>
+  <div id="index"></div>
+  <div class="cap" id="meta"></div>
+</div>
+
+<script src="../ui_kits/tui_app/glyphs.js"></script>
+<script src="../ui_kits/tui_app/glyph-index.js"></script>
+<script>
+  const root = document.getElementById("index");
+  const SRC = window.NERD_INDEX_SOURCES;
+  const idx = window.NERD_INDEX;
+  // group names by source prefix
+  const groups = {};
+  for (const name in idx) {
+    const pre = name.split("-")[0];
+    (groups[pre] = groups[pre] || []).push(name);
+  }
+  const wrap = document.createElement("div");
+  wrap.style.display = "flex";
+  wrap.style.flexDirection = "column";
+  wrap.style.gap = "6px";
+  const CAP = 20; // sample per source
+  for (const pre in groups) {
+    const names = groups[pre];
+    const sec = document.createElement("div");
+    sec.className = "src";
+    const hd = document.createElement("div");
+    hd.className = "hd";
+    const extra = names.length > CAP ? "  +" + (names.length - CAP) + " more" : "";
+    hd.textContent = (SRC[pre] || pre) + "  ·  " + names.length + extra;
+    sec.appendChild(hd);
+    const grid = document.createElement("div");
+    grid.className = "igrid";
+    for (const n of names.slice(0, CAP)) {
+      const cell = document.createElement("div");
+      cell.className = "icell";
+      const g = document.createElement("span");
+      g.className = "g";
+      g.textContent = window.nf(n);
+      const l = document.createElement("span");
+      l.className = "l";
+      l.textContent = n.slice(pre.length + 1);
+      cell.appendChild(g); cell.appendChild(l);
+      grid.appendChild(cell);
+    }
+    sec.appendChild(grid);
+    wrap.appendChild(sec);
+  }
+  root.appendChild(wrap);
+  const m = window.NERD_INDEX_META;
+  document.getElementById("meta").textContent =
+    "seed · " + m.count + " glyphs shown · " + m.full_count_note + " (generated, lazy-loaded on miss)";
+</script>
+</body>
+</html>

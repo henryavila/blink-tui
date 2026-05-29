@@ -61,7 +61,10 @@ when one exists.
 │   ├── 07-type-scale.html
 │   ├── 08-glyphs-states.html
 │   ├── 09-glyphs-arrows.html
-│   ├── 10-glyphs-domain.html
+│   ├── 10-glyphs-domain.html      ← glyph system: four tiers + registration API
+│   ├── 22-glyphs-packs.html       ← tier 2 category packs
+│   ├── 23-glyphs-index.html       ← tier 3 raw Nerd Font index (escape hatch)
+│   ├── 24-glyphs-picker.html      ← interactive: search any glyph by name
 │   ├── 11-borders.html
 │   ├── 12-spacing-grid.html
 │   ├── 13-component-pane.html
@@ -70,6 +73,8 @@ when one exists.
 │   ├── 16-component-input.html
 │   ├── 17-component-dialog.html
 │   └── 18-component-spinner.html
+├── scripts/
+│   └── build-glyph-index.mjs   ← generate the full Tier 3 index from glyphnames.json
 └── ui_kits/
     └── tui_app/
         ├── README.md
@@ -82,7 +87,10 @@ when one exists.
         ├── DescriptionList.jsx ← key/value block for detail panes
         ├── Input.jsx
         ├── Dialog.jsx
-        └── glyphs.js           ← core glyphs + registerGlyphs/glyph registry
+        ├── glyphs.js           ← ENGINE: core glyphs + registry + registerGlyphs/glyph/nf
+        ├── glyph-packs.js      ← curated packs: COMMON_DOMAINS (t1) + category packs (t2)
+        ├── glyph-index.js      ← raw name→codepoint index seed (t3, escape hatch + lazy-load)
+        └── glyph-index.full.json ← generated full index (demo; fetched on a miss)
 ```
 
 ---
@@ -354,11 +362,24 @@ ASCII fallbacks: `✓→[x]  ✗→[!]  ◯→[ ]  ◐→[~]  ⚠→[!]  ↻→[
 
 A glyph like `mysql`, `docker`, or `laravel` is **app content**, not framework
 contract. blink does not know what Laravel is, and it ships **no domain glyphs
-in core**. The framework owns the *mechanism*; the app owns the *content*.
+registered** in core. The framework owns the *mechanism*; the app owns the
+*content*.
+
+**Fonts vs. registry — the distinction that drives everything.** The *drawing*
+of every Nerd Font glyph already lives in the user's terminal **font**
+(CaskaydiaMono ships ~10k icons in the Private Use Area). blink bundles **no**
+icon images — printing a codepoint is enough, the font draws it, at zero bundle
+or render cost. What blink owns is the **registry**: the map from a semantic
+NAME to a glyph plus its curated `{ unicode, ascii }` fallbacks and its semantic
+`color`. Those three are **curation** — they cannot be auto-derived for 10k
+icons — which is exactly why "ship every Nerd Font glyph as a first-class blink
+glyph" is impossible by construction: it would have no curated fallback (→ tofu
+risk) and no owned colour (→ style leak). So the raw font is offered only as a
+deliberate, uncurated escape hatch.
 
 **The glyph registry.** blink core provides:
 
-- the registry itself + `glyph(name)` to read one back;
+- the registry + `glyph(name)` to read one back, and `glyphColor(name)`;
 - the **three-variant** shape every glyph declares — `{ nerd, unicode, ascii }`
   — and the icon-set detection that picks one (`setIconSet('nerd'|'unicode'|'ascii')`);
 - the fallback chain `nerd → unicode → ascii`, so a glyph degrades instead of
@@ -366,35 +387,75 @@ in core**. The framework owns the *mechanism*; the app owns the *content*.
 - the glyphs that *are* the contract (states, arrows, box-drawing, blocks,
   spinner — the tables above), which never change.
 
-An app registers its own domain glyphs at boot, deliberately and typed:
+### Four tiers — contract is owned, content is opt-in
+
+| Tier | What | Curation | Cost | File |
+|------|------|----------|------|------|
+| **0 · contract** | states · nav · box · spinner | full | always on | `glyphs.js` |
+| **1 · common** | `COMMON_DOMAINS` (~18 dev domains) | full | opt-in | `glyph-packs.js` |
+| **2 · category** | `LANGUAGES` `DATABASES` `CLOUD` `EDITORS` `OS` `COMPANIES` `FRAMEWORKS` `FILES` `SOCIAL` `ACTIONS` `PACKAGES` | full | opt-in | `glyph-packs.js` |
+| **3 · raw index** | whole Nerd Font, name→codepoint | none (nerd-only, default colour) | escape hatch | `glyph-index.js` |
+
+Tiers 1–3 are CONTENT: the app opts in. Nothing past Tier 0 is registered
+automatically.
+
+**Registration — two forms, both supported.** Anything you omit is filled from
+house defaults (`unicode → ◆`, `ascii → derived from the name`, `color →
+--fg-muted`):
 
 ```js
-import { registerGlyphs, glyph } from '@henryavila/blink-tui';
+// verbose — full curation, self-contained
+registerGlyphs({ laravel: { nerd: '\ue73f', unicode: '◆', ascii: '[la]', color: 'var(--ctp-red)' } });
 
-registerGlyphs({
-  laravel:   { nerd: '\ue73f', unicode: '◆', ascii: '[la]' },
-  tailscale: { nerd: '\uf0e8', unicode: '◈', ascii: '[ts]' },
-});
+// easy — codepoint pulled from the raw index, fallbacks + colour defaulted
+registerGlyphs({ laravel: { nf: 'dev-laravel', color: 'var(--ctp-red)' } });
+
+// by raw hex codepoint, no index needed
+registerGlyphs({ thing: { cp: 'e73f' } });
 
 glyph('laravel'); // → the right variant for the active icon set
 ```
 
-**The common pack.** Because most dev-tool TUIs reuse the same handful of
-domains, blink offers an **optional** convenience pack — `COMMON_DOMAINS`
-(`database`, `mysql`, `postgresql`, `redis`, `docker`, `github`, `git`, `ssh`,
-`nodejs`, `php`, `python`, `vim`, `apple`, `linux`, `ubuntu`, `font`, `ai`,
-`bolt`). It is **not** registered automatically; an app opts in and may extend
-or override any entry:
+**Tiers 1 & 2 — curated packs.** Take a whole pack, then override the few
+entries you care about (packs may overlap a name; last write wins):
 
 ```js
-registerGlyphs(COMMON_DOMAINS);              // take the pack
-registerGlyphs({ database: { nerd: '…' } }); // override one entry
+registerGlyphs(COMMON_DOMAINS);                  // tier 1
+registerGlyphs(LANGUAGES, DATABASES);            // tier 2 — only what you use
+registerGlyphs({ database: { color: 'var(--ctp-sky)' } }); // override one
 ```
 
+**Tier 3 — the raw index (`nf`).** `glyph-index.js` maps canonical Nerd Font
+names (`fa-rocket`, `dev-laravel`, `seti-vue`, `pl-branch` — upstream
+`glyphnames.json` convention) to codepoints. `nf(name)` returns the char
+(nerd-only, no fallback). Use it as a deliberate escape hatch; for anything an
+app shows often, promote it to a curated Tier 1/2 entry instead:
+
+```js
+nf('fa-rocket');                              // → the glyph, or '' if unknown
+registerGlyphs({ deploy: { nf: 'fa-rocket' } });   // muted, ascii derived
+```
+
+The shipped index is a **verified seed** (~150 of the most-used glyphs); the
+production index is **generated** from upstream `glyphnames.json` (~10k) by
+`scripts/build-glyph-index.mjs` and **lazy-loaded on a miss** — so the bundle
+stays lean while the full set stays correct. (Find names visually in the
+`24-glyphs-picker` card — press `l` there to load the full index live.)
+
+```js
+setGlyphIndexUrl('glyph-index.full.json'); // default; '' disables the fetch
+await loadGlyphIndex();                     // explicit, idempotent
+const c = await nfAsync('fa-cube');         // ensure-loaded, then resolve
+```
+
+A synchronous `nf()` miss also kicks one background load; register
+`onGlyphIndex(cb)` to re-render when it lands.
+
 **Prime directive.** A glyph that only makes sense for one app stays in that
-app. Don't add `laravel`/`tailscale`/`syncthing` to blink core — register them
-in the app. The reference kit (`ui_kits/tui_app/`) demonstrates this: it calls
-`registerGlyphs(COMMON_DOMAINS)` itself, exactly as a real product would.
+app. Don't register `laravel`/`tailscale`/`syncthing` into a shared pack —
+register them in the app. The reference kit (`ui_kits/tui_app/`) demonstrates
+this: it calls `registerGlyphs(COMMON_DOMAINS)` and registers `grafana` via the
+easy `nf` form, exactly as a real product would.
 
 ### What is forbidden
 

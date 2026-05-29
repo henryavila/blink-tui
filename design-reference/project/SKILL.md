@@ -24,6 +24,10 @@ designing anything. The short version:
 - No shadows, no transforms, no transitions. Only motion: cursor blink + spinner.
 - No emoji, no SVG icons. Status is carried by core glyphs from `assets/glyphs.json`;
   domain glyphs are app-registered via `registerGlyphs()`, never baked into core.
+  Glyphs come in four opt-in tiers — contract (core), the `COMMON_DOMAINS` pack,
+  curated category packs (languages/databases/cloud/editors/os/companies), and a
+  raw Nerd Font index (`nf()`) escape hatch. See README > ICONOGRAPHY and the
+  `ui_kits/tui_app/glyph-*.js` files.
 - **Intent, not style.** Components take semantic props (`tone="focus"`,
   `state="installed"`, `selected`, `domain="postgresql"`) — never a raw glyph,
   colour, or shape. The framework resolves the looks from house tokens.

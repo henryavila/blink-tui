@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — Glyph packs</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .card { gap: 7px; overflow: hidden; }
+  .pack { display: flex; flex-direction: column; gap: 3px; }
+  .pack .hd { color: var(--accent); font-size: 12px; }
+  .pack .hd span { color: var(--fg-faint); }
+  .pgrid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px 6px; }
+  .gcell { display: flex; align-items: baseline; gap: 1ch; padding: 2px 6px; background: var(--bg-elevated); white-space: nowrap; }
+  .gcell .g { font-size: 16px; line-height: 1; width: 1.4ch; }
+  .gcell .l { font-size: 11px; color: var(--fg-dim); overflow: hidden; text-overflow: ellipsis; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="cap">tier 2 · category packs · each entry fully curated (codepoint + unicode + ascii + colour) · take only what you use</div>
+  <div id="packs"></div>
+  <div class="cap">registerGlyphs(LANGUAGES, DATABASES) · packs may overlap a name (apple, docker) — last write wins, override freely</div>
+</div>
+
+<script src="../ui_kits/tui_app/glyph-packs.js"></script>
+<script>
+  const root = document.getElementById("packs");
+  const wrap = document.createElement("div");
+  wrap.style.display = "flex";
+  wrap.style.flexDirection = "column";
+  wrap.style.gap = "7px";
+  for (const cat in window.GLYPH_PACKS) {
+    const pack = window.GLYPH_PACKS[cat];
+    const names = Object.keys(pack);
+    const sec = document.createElement("div");
+    sec.className = "pack";
+    const hd = document.createElement("div");
+    hd.className = "hd";
+    hd.innerHTML = cat + " <span>· " + names.length + "</span>";
+    sec.appendChild(hd);
+    const grid = document.createElement("div");
+    grid.className = "pgrid";
+    for (const n of names) {
+      const e = pack[n];
+      const cell = document.createElement("div");
+      cell.className = "gcell";
+      const g = document.createElement("span");
+      g.className = "g";
+      g.textContent = e.nerd;
+      g.style.color = e.color;
+      const l = document.createElement("span");
+      l.className = "l";
+      l.textContent = n;
+      cell.appendChild(g);
+      cell.appendChild(l);
+      grid.appendChild(cell);
+    }
+    sec.appendChild(grid);
+    wrap.appendChild(sec);
+  }
+  root.appendChild(wrap);
+</script>
+</body>
+</html>

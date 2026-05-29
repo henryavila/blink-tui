@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>(function(){try{var t=localStorage.getItem('blink-theme')||'tokyonight';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <title>svcd — built with blink</title>
 <link rel="icon" type="image/png" sizes="32x32" href="../../assets/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="../../assets/favicon-16.png">
@@ -11,7 +12,7 @@
   * { box-sizing: border-box; }
   html, body {
     margin: 0; height: 100%; width: 100%;
-    background: var(--ctp-crust);
+    background: var(--bg-sunken);
     overflow: hidden;
     font-feature-settings: "liga" 0, "calt" 0;
   }
@@ -19,7 +20,7 @@
   #stage {
     position: fixed; inset: 0;
     display: flex; align-items: center; justify-content: center;
-    background: var(--ctp-crust);
+    background: var(--bg-sunken);
   }
   /* the app is a fixed character canvas: 100 cols x 30 rows.
      14px font → cell ≈ 8.4 x 18 → 840 x 540 design box. */
@@ -38,7 +39,7 @@
   }
   .tui-cursor { animation: tui-blink 1s step-end infinite; }
   @keyframes tui-blink { 50% { opacity: 0; } }
-  ::selection { background: var(--ctp-surface2); }
+  ::selection { background: var(--bg-focused); }
 </style>
 </head>
 <body>
@@ -49,6 +50,9 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
 <script src="glyphs.js"></script>
+<script src="glyph-index.js"></script>
+<script src="glyph-packs.js"></script>
+<script src="theme.js"></script>
 <script type="text/babel" src="Pane.jsx"></script>
 <script type="text/babel" src="List.jsx"></script>
 <script type="text/babel" src="Footer.jsx"></script>
@@ -60,8 +64,14 @@ const { useState, useEffect, useRef } = React;
 
 // ---- app opts into glyphs (blink core ships none) ----
 // This reference app brings its own domain glyphs: it takes the optional
-// COMMON_DOMAINS convenience pack. Components resolve them by NAME via glyph().
+// COMMON_DOMAINS convenience pack (Tier 1). Components resolve them by NAME via
+// glyph(). It also demonstrates the EASY registration form — a codepoint pulled
+// straight from the raw Nerd Font index (Tier 3), with colour curated here and
+// {unicode, ascii} fallbacks filled in automatically.
 registerGlyphs(COMMON_DOMAINS);
+registerGlyphs({
+  grafana: { nf: "fa-fire", color: "var(--domain-amber)" },  // easy form: nf → index
+});
 
 // ---- scale the fixed canvas to fit the viewport (letterbox) ----
 function fitCanvas() {
@@ -80,7 +90,7 @@ const SERVICES = [
   { id: "docker", domain: "docker",     name: "docker",         state: "pending", detail: "28 containers · 4 stopped", port: null },
   { id: "nginx",  domain: "ubuntu",     name: "nginx",          state: "drift",   detail: "config out-of-date",  port: 80 },
   { id: "node",   domain: "nodejs",     name: "node · api",     state: "ok",      detail: "pid 4821 · :3000",    port: 3000 },
-  { id: "graf",   domain: "database",   name: "grafana",        state: "err",     detail: "missing on host",     port: 3001 },
+  { id: "graf",   domain: "grafana",    name: "grafana",        state: "err",     detail: "missing on host",     port: 3001 },
   { id: "ssh",    domain: "ssh",        name: "ssh-agent",      state: "ok",      detail: "3 keys loaded",       port: null },
 ];
 

@@ -1,6 +1,6 @@
 /* =========================================================================
    blink — Colors & Type
-   Catppuccin Mocha palette + CaskaydiaMono Nerd Font
+   CaskaydiaMono Nerd Font · multi-theme palette layer
    ========================================================================= */
 
 @font-face {
@@ -11,30 +11,74 @@
   font-display: block;
 }
 
-:root {
-  /* -----------------------------------------------------------------------
-     CATPPUCCIN MOCHA — base palette
-     ----------------------------------------------------------------------- */
+/* =========================================================================
+   THEMING — THE CONTRACT  (read this before touching colour anywhere)
+   -------------------------------------------------------------------------
+   A blink app is a TUI. In a real terminal the COLOUR SCHEME belongs to the
+   *terminal*, not to any program: the program emits semantic roles ("this is
+   an error", "this is focus") and the terminal decides the pixels. Change the
+   terminal's scheme and every program repaints — no program knows it happened.
 
-  /* Surfaces (darkest → lightest) */
+   We model that exactly, in three layers:
+
+     1. PALETTE  (--ctp-*)   26 raw colours. The ONLY thing a theme changes.
+                             Defined per-theme in the [data-theme] blocks below.
+     2. INTENT   (semantic)  --fg, --accent, --state-ok, --border-focus,
+                             --domain-* … These map a ROLE to a palette slot.
+                             This layer is IDENTICAL for every theme — the
+                             grammar ("focus is always --accent") never moves.
+     3. CONSUMER (components) Components read ONLY layer 2. They never see a
+                             palette name and have no colour prop. A widget
+                             says "this is a postgres row", never "paint blue".
+
+   WHERE THE THEME LIVES — a single owner, never per component:
+     • The theme is one attribute, `data-theme`, on the ROOT SURFACE
+       (the <html> element = the terminal window; the cell grid inherits it).
+     • It is set in exactly ONE place — theme.js (the app shell) — at boot.
+       No component sets it. No component reads it. There is no theme prop.
+     • Switching = changing that one attribute; CSS inheritance repaints the
+       whole tree. Consistency is STRUCTURAL, not a matter of discipline:
+       a component literally cannot diverge because it owns no colour.
+
+   THE ONLY SANCTIONED EXCEPTION — a scoped theme boundary:
+     Putting `data-theme="…"` on a subtree re-themes just that subtree (e.g. a
+     light preview inside a dark app). This is deliberate and obvious in the
+     markup — it is NOT per-component drift.
+
+   THE LINT RULE (makes the contract verifiable, not just stated):
+     • No hex colour and no `--ctp-*` reference may appear OUTSIDE this file.
+     • No component (.jsx / .js) may read or branch on `data-theme`.
+     If either shows up, it's a bug — it has bypassed the intent layer.
+
+   ADDING A THEME: copy a [data-theme] block, supply all 26 --ctp-* slots in
+   the same darkest→lightest / hue order, register it in theme.js. Done — every
+   component and every existing screen inherits it for free.
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   LAYER 1 · PALETTE  ·  one block per theme, 26 slots each
+   `:root` with no attribute === the neutral default (no flash before JS).
+   ------------------------------------------------------------------------- */
+
+/* neutral — Catppuccin Mocha · the default, calm dark.
+   `vivid` shares this exact palette — it differs only in the intent overrides
+   further down (the "how much colour" axis), not in the 26 raw colours. */
+:root,
+[data-theme="neutral"],
+[data-theme="vivid"],
+[data-theme="contrast"] {
   --ctp-crust:     #11111b;
   --ctp-mantle:    #181825;
-  --ctp-base:      #1e1e2e;  /* canonical background */
+  --ctp-base:      #1e1e2e;
   --ctp-surface0:  #313244;
   --ctp-surface1:  #45475a;
   --ctp-surface2:  #585b70;
-
-  /* Overlays (mid greys) */
   --ctp-overlay0:  #6c7086;
   --ctp-overlay1:  #7f849c;
   --ctp-overlay2:  #9399b2;
-
-  /* Text (dimmest → brightest) */
   --ctp-subtext0:  #a6adc8;
   --ctp-subtext1:  #bac2de;
-  --ctp-text:      #cdd6f4;  /* default foreground */
-
-  /* Accents */
+  --ctp-text:      #cdd6f4;
   --ctp-rosewater: #f5e0dc;
   --ctp-flamingo:  #f2cdcd;
   --ctp-pink:      #f5c2e7;
@@ -49,11 +93,135 @@
   --ctp-sapphire:  #74c7ec;
   --ctp-blue:      #89b4fa;
   --ctp-lavender:  #b4befe;
+}
 
-  /* -----------------------------------------------------------------------
-     SEMANTIC TOKENS — use these in components, not the raw palette
-     ----------------------------------------------------------------------- */
+/* nord — frost & polar night · cool, low-chroma */
+[data-theme="nord"] {
+  --ctp-crust:     #242933;
+  --ctp-mantle:    #2b303b;
+  --ctp-base:      #2e3440;
+  --ctp-surface0:  #3b4252;
+  --ctp-surface1:  #434c5e;
+  --ctp-surface2:  #4c566a;
+  --ctp-overlay0:  #545e72;
+  --ctp-overlay1:  #616e88;
+  --ctp-overlay2:  #707e9b;
+  --ctp-subtext0:  #aeb6c6;
+  --ctp-subtext1:  #d8dee9;
+  --ctp-text:      #eceff4;
+  --ctp-rosewater: #ecd3c8;
+  --ctp-flamingo:  #e3c0bb;
+  --ctp-pink:      #c895b5;
+  --ctp-mauve:     #b48ead;
+  --ctp-red:       #bf616a;
+  --ctp-maroon:    #cf7782;
+  --ctp-peach:     #d08770;
+  --ctp-yellow:    #ebcb8b;
+  --ctp-green:     #a3be8c;
+  --ctp-teal:      #8fbcbb;
+  --ctp-sky:       #88c0d0;
+  --ctp-sapphire:  #81a1c1;
+  --ctp-blue:      #5e81ac;
+  --ctp-lavender:  #88c0d0;
+}
 
+/* gruvbox — retro · warm & earthy */
+[data-theme="gruvbox"] {
+  --ctp-crust:     #1d2021;
+  --ctp-mantle:    #232829;
+  --ctp-base:      #282828;
+  --ctp-surface0:  #3c3836;
+  --ctp-surface1:  #504945;
+  --ctp-surface2:  #665c54;
+  --ctp-overlay0:  #7c6f64;
+  --ctp-overlay1:  #928374;
+  --ctp-overlay2:  #a89984;
+  --ctp-subtext0:  #bdae93;
+  --ctp-subtext1:  #d5c4a1;
+  --ctp-text:      #ebdbb2;
+  --ctp-rosewater: #f9f5d7;
+  --ctp-flamingo:  #f2e5bc;
+  --ctp-pink:      #d3869b;
+  --ctp-mauve:     #b16286;
+  --ctp-red:       #fb4934;
+  --ctp-maroon:    #cc241d;
+  --ctp-peach:     #fe8019;
+  --ctp-yellow:    #fabd2f;
+  --ctp-green:     #b8bb26;
+  --ctp-teal:      #689d6a;
+  --ctp-sky:       #8ec07c;
+  --ctp-sapphire:  #458588;
+  --ctp-blue:      #83a598;
+  --ctp-lavender:  #d3869b;
+}
+
+/* tokyonight — saturated indigo night, DEEPENED: a darker canvas so the bright
+   indigo text & accents pop harder (more contrast, no extra brightness) */
+[data-theme="tokyonight"] {
+  --ctp-crust:     #0b0c12;
+  --ctp-mantle:    #101119;
+  --ctp-base:      #15161f;
+  --ctp-surface0:  #1d1f2e;
+  --ctp-surface1:  #262b3d;
+  --ctp-surface2:  #383d57;
+  --ctp-overlay0:  #565f89;
+  --ctp-overlay1:  #737aa2;
+  --ctp-overlay2:  #828bb8;
+  --ctp-subtext0:  #9099bd;
+  --ctp-subtext1:  #a9b1d6;
+  --ctp-text:      #c0caf5;
+  --ctp-rosewater: #f7c8d4;
+  --ctp-flamingo:  #ff9e9e;
+  --ctp-pink:      #ff75a0;
+  --ctp-mauve:     #bb9af7;
+  --ctp-red:       #f7768e;
+  --ctp-maroon:    #db4b4b;
+  --ctp-peach:     #ff9e64;
+  --ctp-yellow:    #e0af68;
+  --ctp-green:     #9ece6a;
+  --ctp-teal:      #73daca;
+  --ctp-sky:       #7dcfff;
+  --ctp-sapphire:  #2ac3de;
+  --ctp-blue:      #7aa2f7;
+  --ctp-lavender:  #bb9af7;
+}
+
+/* latte — Catppuccin Latte · the light theme (same roles, inverted luminance) */
+[data-theme="latte"] {
+  --ctp-crust:     #dce0e8;
+  --ctp-mantle:    #e6e9ef;
+  --ctp-base:      #eff1f5;
+  --ctp-surface0:  #ccd0da;
+  --ctp-surface1:  #bcc0cc;
+  --ctp-surface2:  #acb0be;
+  --ctp-overlay0:  #9ca0b0;
+  --ctp-overlay1:  #8c8fa1;
+  --ctp-overlay2:  #7c7f93;
+  --ctp-subtext0:  #6c6f85;
+  --ctp-subtext1:  #5c5f77;
+  --ctp-text:      #4c4f69;
+  --ctp-rosewater: #dc8a78;
+  --ctp-flamingo:  #dd7878;
+  --ctp-pink:      #ea76cb;
+  --ctp-mauve:     #8839ef;
+  --ctp-red:       #d20f39;
+  --ctp-maroon:    #e64553;
+  --ctp-peach:     #fe640b;
+  --ctp-yellow:    #df8e1d;
+  --ctp-green:     #40a02b;
+  --ctp-teal:      #179299;
+  --ctp-sky:       #04a5e5;
+  --ctp-sapphire:  #209fb5;
+  --ctp-blue:      #1e66f5;
+  --ctp-lavender:  #7287fd;
+}
+
+/* -------------------------------------------------------------------------
+   LAYER 2 · INTENT  ·  role → palette slot.  IDENTICAL for every theme.
+   Components consume ONLY these. Declared on :root so they inherit the
+   palette of whatever [data-theme] surface is above them at use time.
+   ------------------------------------------------------------------------- */
+:root {
   /* Backgrounds */
   --bg:            var(--ctp-base);       /* app background */
   --bg-elevated:   var(--ctp-mantle);     /* panels above bg */
@@ -71,12 +239,12 @@
   --fg-disabled:   var(--ctp-overlay0);   /* disabled items, separators */
   --fg-inverse:    var(--ctp-base);       /* text on --bg-inverse */
 
-  /* Borders (always rendered as glyphs — these color the glyphs themselves) */
+  /* Borders (rendered as glyphs — these colour the glyphs themselves) */
   --border:        var(--ctp-surface1);   /* default pane border */
   --border-focus:  var(--ctp-lavender);   /* border of focused pane */
   --border-strong: var(--ctp-overlay0);   /* emphasised dividers */
 
-  /* Accents (mapped to roles, not raw colours) */
+  /* Accents (roles, not raw colours) */
   --accent:        var(--ctp-lavender);   /* primary, focus, brand */
   --accent-alt:    var(--ctp-mauve);      /* secondary brand */
   --link:          var(--ctp-blue);       /* link / refs */
@@ -90,60 +258,111 @@
   --state-drift:   var(--ctp-peach);      /* ◐  drift */
   --state-info:    var(--ctp-sky);        /* ↻  info/rerun */
 
-  /* -----------------------------------------------------------------------
-     TYPOGRAPHY
-     One family. One size. Variation comes from colour + weight + glyph.
-     ----------------------------------------------------------------------- */
+  /* Domain families — brand glyphs express a HUE FAMILY, never a raw colour.
+     glyph-packs.js paints every domain through one of these, so brand glyphs
+     keep their relative identity (postgres stays "blue family") AND recolour
+     harmonically with the active theme. */
+  --domain-blue:    var(--ctp-blue);
+  --domain-azure:   var(--ctp-sapphire);
+  --domain-cyan:    var(--ctp-sky);
+  --domain-green:   var(--ctp-green);
+  --domain-red:     var(--ctp-red);
+  --domain-amber:   var(--ctp-peach);
+  --domain-yellow:  var(--ctp-yellow);
+  --domain-violet:  var(--ctp-mauve);
+  --domain-neutral: var(--fg-muted);
 
+  /* -----------------------------------------------------------------------
+     TYPOGRAPHY · one family, one size. Variation = colour + weight + glyph.
+     ----------------------------------------------------------------------- */
   --font-mono: "CaskaydiaMono Nerd Font",
                "Cascadia Code", "Cascadia Mono",
                "JetBrains Mono", "Fira Code",
                "SF Mono", "Menlo", "Consolas",
                ui-monospace, monospace;
-
   --font-family: var(--font-mono);
 
-  /* Character cell. We design on a fixed cell grid: 8.4px × 18px @ 14px font.
-     Most cells render at integer pixel widths in modern browsers. */
+  /* Character cell: 8.4px × 18px @ 14px font. */
   --cell-w: 8.4px;
   --cell-h: 18px;
 
   /* Type scale — TUIs use ONE size. The scale is for HTML mocks of docs. */
-  --fs-xs:   12px;   /* footnote, dim status */
-  --fs-sm:   13px;   /* mobile-mosh / 60×20 fallback */
-  --fs-base: 14px;   /* canonical TUI body */
-  --fs-md:   16px;   /* zoomed reading */
-  --fs-lg:   20px;   /* big banner ASCII */
-  --fs-xl:   28px;   /* splash / logo */
+  --fs-xs:   12px;
+  --fs-sm:   13px;
+  --fs-base: 14px;
+  --fs-md:   16px;
+  --fs-lg:   20px;
+  --fs-xl:   28px;
 
-  --lh-tight: 1.0;       /* code grid */
-  --lh-base:  1.286;     /* 18px / 14px — body in HTML */
-  --lh-loose: 1.5;       /* prose docs */
+  --lh-tight: 1.0;
+  --lh-base:  1.286;     /* 18px / 14px */
+  --lh-loose: 1.5;
 
-  /* Weights — we ship one weight (400). Bold is via inverse video, not 700. */
   --fw-normal: 400;
-
-  /* Letter / word spacing — must be zero on the grid. */
   --tracking: 0;
 
   /* -----------------------------------------------------------------------
-     LAYOUT TOKENS
-     "Spacing" is measured in cells. There is no half-cell.
+     LAYOUT TOKENS · "spacing" is measured in cells. No half-cell.
      ----------------------------------------------------------------------- */
-
   --gap-0: 0;
-  --gap-1: var(--cell-w);          /* 1ch */
+  --gap-1: var(--cell-w);
   --gap-2: calc(var(--cell-w) * 2);
   --gap-3: calc(var(--cell-w) * 3);
   --gap-4: calc(var(--cell-w) * 4);
 
-  --pad-row: 0 var(--cell-w);      /* canonical row padding: 1 cell L/R */
+  --pad-row: 0 var(--cell-w);
 
-  /* Target window dimensions */
   --cols-full:   100;
   --rows-full:   30;
   --cols-mobile: 60;
   --rows-mobile: 20;
+}
+
+/* -------------------------------------------------------------------------
+   LAYER 2b · PER-THEME INTENT OVERRIDES
+   -------------------------------------------------------------------------
+   Themes above swap LAYER 1 (the palette). A theme MAY ALSO remap a curated
+   set of intent roles — still ONE switch on the surface, still global, still
+   read by no component, so the consistency guarantee holds. Two variants of
+   neutral live here; both reuse neutral's Mocha palette and differ only in
+   how the intent layer spends it:
+
+     neutral+  (contrast) — MONOCHROMATIC, just punchier: deeper canvas,
+                            brighter borders, crisper selection. No hue.
+     vivid                — COLOURFUL chrome: borders and the selected row
+                            carry real accent colour. Body text stays calm
+                            (--fg / --fg-muted / --fg-dim never coloured —
+                            colour lives on chrome and glyphs, not on text).
+   ------------------------------------------------------------------------- */
+
+/* neutral+ — same greys, more contrast. No colour added. */
+[data-theme="contrast"] {
+  --bg:            var(--ctp-crust);     /* deeper canvas → text & glyphs pop */
+  --bg-panel:      var(--ctp-crust);
+  --bg-elevated:   var(--ctp-base);
+  --bg-sunken:     var(--ctp-mantle);    /* status bars lift off the canvas */
+  --bg-selected:   var(--ctp-surface1);  /* brighter selection fill */
+  --bg-focused:    var(--ctp-surface2);  /* brightest focus fill */
+  --border:        var(--ctp-overlay1);  /* clearly visible borders (was surface1) */
+  --border-strong: var(--ctp-overlay2);
+  --fg-faint:      var(--ctp-overlay2);  /* brighter labels / captions */
+  --fg-dim:        var(--ctp-subtext1);  /* lift the dimmest text tier */
+}
+
+/* vivid — ACCENT marks what's featured. The selected row and the focused
+   pane's border carry the accent; everything else stays exactly like neutral.
+   Key constraints: backgrounds are NOT lightened (the selection accent is mixed
+   into crust, so it stays dark, never a pale wash), and resting pane borders
+   stay neutral grey — only the FOCUSED pane border is accent (the default
+   --border-focus), so colour points at the one thing the consumer features. */
+[data-theme="vivid"] {
+  /* selected / focused row: accent-hued but DARK (mixed into crust, not lighter
+     than the canvas) so light row text stays readable */
+  --bg-selected: color-mix(in oklch, var(--ctp-lavender) 20%, var(--ctp-crust));
+  --bg-focused:  color-mix(in oklch, var(--ctp-lavender) 38%, var(--ctp-crust));
+
+  /* states fully chromatic — pending was the last grey one (colour on a glyph) */
+  --state-pending: var(--ctp-sky);
 }
 
 /* =========================================================================
