@@ -1,31 +1,49 @@
 // Pane.jsx — a box-drawn rectangle with an optional title in the top border.
 // Borders are real box-drawing characters laid on a flex column, never CSS.
 //
+// HOUSE STYLE: there is exactly ONE border shape — single-line, ROUNDED corners
+// (╭ ╮ ╰ ╯). The consumer never picks a shape; blink owns it. Borders are
+// exposed by PURPOSE, not by appearance.
+//
+// PUBLIC API — `tone` (semantic intent), never a shape name:
+//   tone="resting"  default — muted border, a pane at rest
+//   tone="focus"    the focused pane — border + title recoloured lavender
+//   tone="error"    an error / destructive pane — border + title red
+// Focus and elevation are colour, never line weight. The shape never changes
+// between tones, so the layout never shifts.
+//
 // Props:
-//   title    string shown inside the top border:  ┌─ title ──────┐
-//   focused  bool   → double border + accent colour
-//   variant  "default" | "rounded" | "double" | "error"
+//   title    string shown inside the top border:  ╭─ title ──────╮
+//   tone     "resting" | "focus" | "error"   (default "resting")
 //   flex     css flex value for the pane (default "1")
-//   width    optional fixed cell width (e.g. 36) → renders exact glyph rows
 //   children pane body
+//
+// Back-compat (do not use in new code): `focused` (bool ⇒ tone "focus"),
+// `variant` ("error" ⇒ tone "error"; "square" ⇒ legacy square shape; other
+// values ⇒ the rounded house style). These keep older call sites working while
+// code migrates to `tone`.
 
-function Pane({ title, focused = false, variant, flex = "1", children, style = {} }) {
-  const v = variant || (focused ? "double" : "default");
-  const sets = {
-    default: { tl: "┌", tr: "┐", bl: "└", br: "┘", h: "─", v: "│" },
+function Pane({ title, tone, focused = false, variant, flex = "1", children, style = {} }) {
+  // Resolve PURPOSE: prefer the semantic `tone`, then fall back to legacy props.
+  const t = tone
+    || (variant === "error" ? "error"
+    : focused ? "focus"
+    : "resting");
+
+  // Resolve SHAPE: always rounded, except the legacy `variant="square"` escape.
+  const shapes = {
     rounded: { tl: "╭", tr: "╮", bl: "╰", br: "╯", h: "─", v: "│" },
-    double:  { tl: "╔", tr: "╗", bl: "╚", br: "╝", h: "═", v: "║" },
-    error:   { tl: "╔", tr: "╗", bl: "╚", br: "╝", h: "═", v: "║" },
+    square:  { tl: "┌", tr: "┐", bl: "└", br: "┘", h: "─", v: "│" },
   };
-  const s = sets[v] || sets.default;
+  const s = variant === "square" ? shapes.square : shapes.rounded;
 
   const borderColor =
-    v === "error" ? "var(--state-err)"
-    : focused ? "var(--border-focus)"
+    t === "error" ? "var(--state-err)"
+    : t === "focus" ? "var(--border-focus)"
     : "var(--border)";
   const titleColor =
-    v === "error" ? "var(--state-err)"
-    : focused ? "var(--accent)"
+    t === "error" ? "var(--state-err)"
+    : t === "focus" ? "var(--accent)"
     : "var(--fg-muted)";
 
   // Top border: corner + "─ title " + fill + corner

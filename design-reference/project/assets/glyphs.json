@@ -1,5 +1,5 @@
 {
-  "_comment": "Canonical glyph palette for blink. Codepoints from CaskaydiaMono Nerd Font (Unicode + Nerd Font private-use area). Do not add new entries without updating README.md > ICONOGRAPHY.",
+  "_comment": "Canonical glyph palette for blink CORE. Codepoints from CaskaydiaMono Nerd Font (Unicode + box-drawing). These are the framework contract — they appear in every blink app and never change. Domain glyphs (mysql, docker, laravel, …) are NOT here: they are content, not contract. Apps register their own via registerGlyphs() — see README > ICONOGRAPHY > 'The glyph registry'.",
   "states": {
     "check":        { "glyph": "✓", "codepoint": "U+2713", "token": "--state-ok",      "ascii": "[x]", "meaning": "installed / done" },
     "cross":        { "glyph": "✗", "codepoint": "U+2717", "token": "--state-err",     "ascii": "[!]", "meaning": "missing / failed" },
@@ -7,6 +7,7 @@
     "half":         { "glyph": "◐", "codepoint": "U+25D0", "token": "--state-drift",   "ascii": "[~]", "meaning": "drift / partial" },
     "checkbox-on":  { "glyph": "☑", "codepoint": "U+2611", "token": "--accent",        "ascii": "[*]", "meaning": "selected" },
     "checkbox-off": { "glyph": "☐", "codepoint": "U+2610", "token": "--fg-dim",        "ascii": "[ ]", "meaning": "unselected" },
+    "checkbox-lock":{ "glyph": "▣", "codepoint": "U+25A3", "token": "--fg-muted",      "ascii": "[=]", "meaning": "selected, locked (required, non-toggle)" },
     "warn":         { "glyph": "⚠", "codepoint": "U+26A0", "token": "--state-warn",    "ascii": "[!]", "meaning": "warning" },
     "rerun":        { "glyph": "↻", "codepoint": "U+21BB", "token": "--state-info",    "ascii": "(*)", "meaning": "idempotent / refresh" }
   },
@@ -16,15 +17,15 @@
     "expanded":     { "glyph": "▾", "codepoint": "U+25BE", "meaning": "expandable, open" },
     "depends":      { "glyph": "↳", "codepoint": "U+21B3", "meaning": "dependency / consequence" },
     "flow":         { "glyph": "→", "codepoint": "U+2192", "meaning": "next step" },
-    "back":         { "glyph": "◀", "codepoint": "U+25C0", "meaning": "previous / return" }
+    "back":         { "glyph": "◀", "codepoint": "U+25C0", "meaning": "previous / return" },
+    "more-above":   { "glyph": "▴", "codepoint": "U+25B4", "meaning": "windowed list: rows hidden above" },
+    "more-below":   { "glyph": "▾", "codepoint": "U+25BE", "meaning": "windowed list: rows hidden below" }
   },
   "box": {
     "tl":  "┌", "tr":  "┐", "bl":  "└", "br":  "┘",
     "h":   "─", "v":   "│",
     "tee_l": "├", "tee_r": "┤", "tee_t": "┬", "tee_b": "┴", "cross": "┼",
-    "rtl": "╭", "rtr": "╮", "rbl": "╰", "rbr": "╯",
-    "dtl": "╔", "dtr": "╗", "dbl": "╚", "dbr": "╝",
-    "dh":  "═", "dv":  "║"
+    "rtl": "╭", "rtr": "╮", "rbl": "╰", "rbr": "╯"
   },
   "spinner": {
     "braille": ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"],
@@ -35,25 +36,5 @@
     "u_eighth": "▁", "u_quarter": "▂", "u_half": "▄", "u_3q": "▆",
     "cursor": "▎"
   },
-  "domain_comment": "Domain glyphs are Nerd Font private-use codepoints. Render correctly only in CaskaydiaMono / other Nerd Fonts. The 'glyph' field below contains the literal character; codepoint cited for portability.",
-  "domain": {
-    "database":   { "glyph": "\uf1c0", "codepoint": "U+F1C0", "name": "database (generic)" },
-    "mysql":      { "glyph": "\ue704", "codepoint": "U+E704", "name": "mysql" },
-    "postgresql": { "glyph": "\ue76e", "codepoint": "U+E76E", "name": "postgresql" },
-    "redis":      { "glyph": "\ue76d", "codepoint": "U+E76D", "name": "redis" },
-    "docker":     { "glyph": "\uf308", "codepoint": "U+F308", "name": "docker" },
-    "github":     { "glyph": "\uf09b", "codepoint": "U+F09B", "name": "github" },
-    "git":        { "glyph": "\ue702", "codepoint": "U+E702", "name": "git" },
-    "ssh":        { "glyph": "\uf015", "codepoint": "U+F015", "name": "ssh / home" },
-    "nodejs":     { "glyph": "\ue718", "codepoint": "U+E718", "name": "nodejs" },
-    "php":        { "glyph": "\ue73d", "codepoint": "U+E73D", "name": "php" },
-    "python":     { "glyph": "\ue73c", "codepoint": "U+E73C", "name": "python" },
-    "vim":        { "glyph": "\ue7c5", "codepoint": "U+E7C5", "name": "vim" },
-    "apple":      { "glyph": "\uf179", "codepoint": "U+F179", "name": "apple (macOS)" },
-    "linux":      { "glyph": "\uf17c", "codepoint": "U+F17C", "name": "linux" },
-    "ubuntu":     { "glyph": "\uf31b", "codepoint": "U+F31B", "name": "ubuntu" },
-    "font":       { "glyph": "\uf031", "codepoint": "U+F031", "name": "font" },
-    "ai":         { "glyph": "\uf2db", "codepoint": "U+F2DB", "name": "ai / brain (microchip)" },
-    "bolt":       { "glyph": "\uf0e7", "codepoint": "U+F0E7", "name": "bolt (action)" }
-  }
+  "registry_note": "Domain glyphs are app content, not framework contract. An app calls registerGlyphs({ name: { nerd, unicode, ascii } }) at boot; useGlyph(name) resolves through the same icon-set detection + {nerd → unicode → ascii} fallback as core glyphs. blink ships NO domain glyphs in core. An optional 'common dev domains' pack (mysql, git, docker, node, …) may be installed and extended/overridden by the app — see README."
 }

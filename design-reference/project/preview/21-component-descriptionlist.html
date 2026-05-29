@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — DescriptionList</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .card { gap: 8px; }
+  .dl { display: flex; flex-direction: column; white-space: pre; background: var(--bg); padding: 6px 1ch; }
+  .dl .r { display: flex; gap: 1ch; }
+  .term { color: var(--fg-dim); width: 10ch; flex-shrink: 0; }
+  .val { color: var(--fg); }
+  .g { width: 1ch; flex-shrink: 0; }
+  .ok { color: var(--state-ok); }
+  .err { color: var(--state-err); }
+  .lbl { color: var(--fg-faint); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="lbl">key/value block · term column aligned to a character gutter · a term-less row is a full-width value line · an optional glyph leads the value</div>
+  <div class="dl">
+    <div class="r"><span class="val">Valet</span></div>
+    <div class="r"><span class="val" style="color:var(--fg-muted)">laravel valet — *.localhost https, zero config</span></div>
+    <div class="r"><span class="term">state</span><span class="g ok">✓</span><span class="val">installed · present &amp; current on this host</span></div>
+    <div class="r"><span class="term">change</span><span class="val">keep — no action on apply</span></div>
+    <div class="r"><span class="term">items</span><span class="val">4 steps</span></div>
+    <div class="r"><span class="term">requires</span><span class="val">↳ databases/mysql · databases/redis</span></div>
+  </div>
+</div>
+</body>
+</html>

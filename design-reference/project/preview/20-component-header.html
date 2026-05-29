@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — Header</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .card { gap: 10px; }
+  .hdr {
+    display: flex; justify-content: space-between; align-items: baseline;
+    white-space: pre; padding: 0 1ch; background: var(--bg);
+  }
+  .hdr .left { display: flex; gap: 1ch; }
+  .mark { color: var(--accent); }
+  .title { color: var(--fg); }
+  .sub { color: var(--fg-muted); }
+  .right { color: var(--fg-muted); }
+  .ok { color: var(--state-ok); }
+  .err { color: var(--state-err); }
+  .lbl { color: var(--fg-faint); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="lbl">top status bar · recurs on every wizard screen · lavender mark + title + · subtitle + right status slot</div>
+  <div class="hdr">
+    <div class="left"><span class="mark">▎</span><span class="title">mesh setup</span><span class="sub">· code-server (mac)</span></div>
+    <div class="right"><span class="ok">✓</span> 2 install · <span class="err">✗</span> 0 remove · 13 keep</div>
+  </div>
+  <div class="lbl">another screen reusing the same primitive</div>
+  <div class="hdr">
+    <div class="left"><span class="mark">▎</span><span class="title">apply</span><span class="sub">· 3 of 15 bundles</span></div>
+    <div class="right">↻ installing mailpit</div>
+  </div>
+</div>
+</body>
+</html>

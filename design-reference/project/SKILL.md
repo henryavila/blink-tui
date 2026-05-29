@@ -6,10 +6,10 @@ user-invocable: true
 
 Read the `README.md` file within this skill, then explore the other available
 files: `colors_and_type.css` (palette + type tokens), `assets/glyphs.json`
-(the canonical glyph palette — states, arrows, box-drawing, domain),
-`assets/logo.txt` (the Blink wordmark + lockups), and `ui_kits/tui_app/`
-(reusable Pane / List / Footer / Input / Dialog components plus an interactive
-demo).
+(the CORE glyph palette — states, arrows, box-drawing, blocks; domain glyphs
+are app-registered, not in core), `assets/logo.txt` (the Blink wordmark +
+lockups), and `ui_kits/tui_app/` (reusable Pane / List / Header / Banner /
+DescriptionList / Footer / Input / Dialog components plus an interactive demo).
 
 **Blink** is a framework for building modern, elegant TUI apps. This design
 system is Blink's house style — the look every Blink app inherits — and a
@@ -20,9 +20,13 @@ designing anything. The short version:
 - Dark background `#1e1e2e` (Catppuccin Mocha base). No gradients, images, or blur.
 - Every border is a Unicode box-drawing glyph — **never** CSS border/radius/outline.
 - Flexbox only. No grid, no absolute positioning, no z-index in app screens.
-- Keyboard-only. Focus is `▸` / inverse video / border recolour — never a focus ring.
+- Keyboard-only. Focus is `▶` / inverse video / border recolour — never a focus ring.
 - No shadows, no transforms, no transitions. Only motion: cursor blink + spinner.
-- No emoji, no SVG icons. Status is carried by glyphs from `assets/glyphs.json`.
+- No emoji, no SVG icons. Status is carried by core glyphs from `assets/glyphs.json`;
+  domain glyphs are app-registered via `registerGlyphs()`, never baked into core.
+- **Intent, not style.** Components take semantic props (`tone="focus"`,
+  `state="installed"`, `selected`, `domain="postgresql"`) — never a raw glyph,
+  colour, or shape. The framework resolves the looks from house tokens.
 
 Brand: the name is always lowercase **blink**. The mark is the blinking cursor
 block — `bl▎nk` (block as the "i") or `blink█` (trailing block) — accented in

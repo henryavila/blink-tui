@@ -14,26 +14,37 @@
   .row { padding: 0 2ch; }
   .row.focused { background: var(--bg-focused); }
   .row.selected { background: var(--bg-selected); }
-  .row .arrow { color: var(--accent); }
-  .row .blank { color: transparent; }
+  .arrow { color: var(--accent); }
+  .blank { color: transparent; }
   .meta { color: var(--fg-dim); }
+  .on { color: var(--accent); }
+  .off { color: var(--fg-dim); }
+  .lock { color: var(--fg-muted); }
   .ok { color: var(--state-ok); }
-  .pending { color: var(--state-pending); }
   .err { color: var(--state-err); }
   .drift { color: var(--state-drift); }
+  .info { color: var(--state-info); }
+  .more { color: var(--fg-faint); padding: 0 2ch; }
   .lbl { color: var(--fg-faint); font-size: 11px; padding: 0 2ch; }
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="lbl">list rows · ▶ marks focus · surface1 fills focus · surface0 fills selected · selection is independent of focus</div>
+  <div class="lbl">list row · columns align on the cell grid: ▶ focus · ☑/☐/▣ selection · ✓/✗/◐/↻ state · domain · label · meta. selection + state are two distinct cells, never merged.</div>
   <div class="list">
-    <div class="row"><span class="blank">▶</span> <span class="ok">✓</span> postgres@14.10        <span class="meta">↳ data/pg/main</span></div>
-    <div class="row selected"><span class="blank">▶</span> <span class="ok">✓</span> redis@7.2             <span class="meta">↳ /var/redis</span></div>
-    <div class="row focused"><span class="arrow">▶</span> <span class="pending">◯</span> docker                <span class="meta">28 containers · 4 stopped</span></div>
-    <div class="row"><span class="blank">▶</span> <span class="drift">◐</span> nginx                 <span class="meta">drift · config out-of-date</span></div>
-    <div class="row"><span class="blank">▶</span> <span class="err">✗</span> grafana               <span class="meta">missing on host</span></div>
-    <div class="row"><span class="blank">▶</span> <span class="ok">✓</span> ssh-agent             <span class="meta">↳ 3 keys loaded</span></div>
+    <div class="row"><span class="blank">▶</span> <span class="lock">▣</span> <span class="ok">✓</span> Git identity          <span class="meta">req</span></div>
+    <div class="row selected"><span class="blank">▶</span> <span class="on">☑</span> <span class="ok">✓</span> MySQL                 <span class="meta">keep</span></div>
+    <div class="row focused"><span class="arrow">▶</span> <span class="off">☐</span> <span class="err">✗</span> PostgreSQL            <span class="meta">→ install</span></div>
+    <div class="row"><span class="blank">▶</span> <span class="on">☑</span> <span class="ok">✓</span> Redis                 <span class="meta">keep</span></div>
+    <div class="row"><span class="blank">▶</span> <span class="off">☐</span> <span class="err">✗</span> MS SQL driver         <span class="meta">↳ needs odbc</span></div>
+  </div>
+  <div class="lbl">windowed (height-bounded) · keyboard-paged, no scrollbar · ▴/▾ N more mark hidden rows</div>
+  <div class="list">
+    <div class="more">▴ 2 more</div>
+    <div class="row"><span class="blank">▶</span> <span class="on">☑</span> <span class="ok">✓</span> Tailscale             <span class="meta">keep</span></div>
+    <div class="row focused"><span class="arrow">▶</span> <span class="off">☐</span> <span class="err">✗</span> code-server           <span class="meta">→ install</span></div>
+    <div class="row"><span class="blank">▶</span> <span class="on">☑</span> <span class="drift">◐</span> Mosh                  <span class="meta">keep</span></div>
+    <div class="more">▾ 3 more</div>
   </div>
 </div>
 </body>

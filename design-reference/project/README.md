@@ -44,7 +44,7 @@ when one exists.
 ├── fonts/
 │   └── CaskaydiaMonoNerdFontMono-Regular.ttf
 ├── assets/
-│   ├── glyphs.json            ← canonical glyph palette (states, arrows, domain)
+│   ├── glyphs.json            ← CORE glyph palette (states, arrows, box, blocks)
 │   ├── logo.txt               ← blink wordmark + lockups (primary / alt / favicon)
 │   └── favicon-{16,32,64,256}.png  ← cursor-block favicon, lavender on base
 ├── brand/
@@ -75,11 +75,14 @@ when one exists.
         ├── README.md
         ├── index.html         ← interactive 100×30 app demo
         ├── Pane.jsx
-        ├── List.jsx
+        ├── List.jsx           ← rows: checkbox + state + domain columns, windowed
         ├── Footer.jsx
+        ├── Header.jsx          ← top status bar (mark + title + right slot)
+        ├── Banner.jsx          ← one-line in-flow notice (info/success/warn)
+        ├── DescriptionList.jsx ← key/value block for detail panes
         ├── Input.jsx
         ├── Dialog.jsx
-        └── glyphs.js
+        └── glyphs.js           ← core glyphs + registerGlyphs/glyph registry
 ```
 
 ---
@@ -136,6 +139,46 @@ built with blink inherit.)
 
 ---
 
+## API PRINCIPLE — intent, not style
+
+**The consumer chooses the intent; blink owns the style.** A blink component
+never accepts a raw glyph, a raw colour, or a shape name. It accepts a
+*semantic* prop describing what the thing MEANS, and the framework resolves the
+glyph, the colour, the border, and the spacing from the house tokens. This is
+the single rule that keeps every blink app on-style for free — and it is
+non-negotiable for components in this system.
+
+```jsx
+// ✗ style leaking into the API — the consumer paints pixels
+<Pane variant="double" />
+<ListRow glyph="✓" glyphColor="var(--ctp-green)" domainColor="#89b4fa" />
+<Banner glyph="✓" color="green" />
+
+// ✓ intent only — the framework decides how it looks
+<Pane tone="focus" />
+<ListRow state="installed" domain="postgresql" selected />
+<Banner tone="success" />
+```
+
+What the consumer is allowed to express:
+
+| Concern            | Intent prop (consumer)                    | blink owns (framework)                         |
+|--------------------|-------------------------------------------|------------------------------------------------|
+| Pane emphasis      | `tone` = resting \| focus \| error        | border + title colour; single-rounded shape    |
+| Row / detail status| `state` = installed \| missing \| drift \| partial \| idempotent \| pending \| ok \| warn | the glyph (`✓ ✗ ◐ ↻ ◯ ⚠`) + its semantic colour |
+| Selection          | `selected` / `locked` (bool)              | `☑ / ☐ / ▣` + colour                            |
+| Domain icon        | `domain` = a registered NAME              | the glyph + its colour (owned at registration) |
+| Notice severity    | `tone` = info \| success \| warn          | leading glyph + colour                          |
+| De-emphasis        | `muted` (bool)                            | which grey tier                                 |
+
+Colour, glyph, and shape are **outputs** of intent, never inputs. If you find
+yourself wanting to pass a hex value or a glyph character into a component, the
+component is missing an intent — add the intent, don't open a style hole. (The
+glyph→colour and state→glyph maps live centrally in `glyphs.js`: `stateGlyph()`,
+`SELECTION`, and the registry's per-entry `color`.)
+
+---
+
 ## VISUAL FOUNDATIONS
 
 The full visual contract. Everything a blink app renders flows from these rules.
@@ -173,8 +216,10 @@ there is no `12px`. There is `1ch`, `2ch`, `3ch`.
 ### Borders & containers
 
 - **Every "border" is drawn with Unicode box-drawing characters.**
-  `┌ ─ ┐ │ └ ┘ ├ ┤ ┬ ┴ ┼` for normal, `╭ ╰ ╮ ╯` for rounded-where-supported,
-  `╔ ═ ╗ ║ ╚ ╝` for double-line emphasis.
+  The house style is **single-line, rounded corners** — `╭ ─ ╮ │ ╰ ─ ╯`
+  plus the tees `├ ┤ ┬ ┴ ┼`. Square corners (`┌ ┐ └ ┘`) are a legacy
+  opt-out only. **There is no double-line border** — it reads dated; focus and
+  modals are signalled by colour, not by a heavier line.
 - **CSS `border`, `border-radius`, `outline` are forbidden** on box chrome.
 - **Pane titles** sit *inside* the top border:
   `┌─ services ──────────────┐`. No tab containers, no headers floating
@@ -200,8 +245,10 @@ there is no `12px`. There is `1ch`, `2ch`, `3ch`.
   1. **`▶` arrow** prefix on the focused row (preferred for lists).
   2. **Inverse video** of the focused row (preferred for buttons / tabs).
   3. **Border recolour** to `--border-focus` (lavender) on the focused
-     pane. Same glyphs, different colour.
-- Never `outline:`, never `box-shadow`, never a focus ring.
+     pane. Same single-line rounded glyphs — only the colour changes, so the
+     layout never shifts on focus.
+- Never `outline:`, never `box-shadow`, never a focus ring, never a heavier
+  (double) border to mean focus.
 
 ### Animation
 
@@ -217,24 +264,28 @@ there is no `12px`. There is `1ch`, `2ch`, `3ch`.
 
 ### Shadows & elevation
 
-- **No shadows.** Elevation is communicated by **border weight**: single line
-  (`─`) for default panes, double line (`═`) for the focused pane or a modal
-  dialog.
+- **No shadows.** Elevation is communicated by **border colour**, never by
+  weight: a muted single-line border (`--border`) for a resting pane, the same
+  border recoloured **lavender** (`--border-focus`) for the focused pane, and
+  **red** (`--state-err`) for an error pane. A modal is a focused (lavender)
+  pane that overlays the app.
 - **No blur, no transparency.** `opacity` and `filter: blur()` are
   forbidden. `rgba()` with alpha is forbidden.
 
 ### Corners
 
-- Default panes use **square corners** (`┌ ┐ └ ┘`).
-- Dialogs and detail panes may use **rounded corners** (`╭ ╮ ╰ ╯`) where the
-  rendering font supports them (Cascadia Mono does).
-- "Corner radius" as a CSS property is forbidden. The corner is a glyph.
+- **All panes use rounded corners** (`╭ ╮ ╰ ╯`) — the modern house style,
+  rendered as glyphs (Cascadia Mono supports them).
+- **Square corners** (`┌ ┐ └ ┘`) are a legacy opt-out (`variant="square"`),
+  not the default.
+- **No double-line corners.** "Corner radius" as a CSS property is forbidden.
+  The corner is a glyph.
 
 ### Cards
 
 There are no "cards". The analogous primitive is a **pane**: a box-drawn
 rectangle with an optional title in the top border and a list of rows inside.
-Panes don't lift, don't round (except via glyph), and don't shadow.
+Panes don't lift, don't shadow, and use rounded glyph corners.
 
 ### Layout rules
 
@@ -299,21 +350,51 @@ ASCII fallbacks: `✓→[x]  ✗→[!]  ◯→[ ]  ◐→[~]  ⚠→[!]  ↻→[
 | `→`   | flow      | next step                                |
 | `◀`   | back      | previous / return                        |
 
-### Domain glyphs (Nerd Font private-use area)
+### Domain glyphs — content, not contract
 
-The brief calls out these domains. Each is a literal Nerd Font codepoint —
-they render as recognisable glyphs in CaskaydiaMono and are intentionally
-not described here in prose so the source-of-truth is the font itself.
+A glyph like `mysql`, `docker`, or `laravel` is **app content**, not framework
+contract. blink does not know what Laravel is, and it ships **no domain glyphs
+in core**. The framework owns the *mechanism*; the app owns the *content*.
 
-- `database` (generic), `mysql`, `postgresql`, `redis`
-- `docker`, `github`, `git`, `ssh`
-- `nodejs`, `php`, `python`, `vim`
-- `apple` (macOS), `linux`, `ubuntu`
-- `font`, `ai` / `brain`, `bolt` (action)
+**The glyph registry.** blink core provides:
 
-Canonical codepoints are stored in `assets/glyphs.json` and are imported by
-`ui_kits/tui_app/glyphs.js`. **Do not invent new domain glyphs** without
-adding them to that file and discussing with the system owner first.
+- the registry itself + `glyph(name)` to read one back;
+- the **three-variant** shape every glyph declares — `{ nerd, unicode, ascii }`
+  — and the icon-set detection that picks one (`setIconSet('nerd'|'unicode'|'ascii')`);
+- the fallback chain `nerd → unicode → ascii`, so a glyph degrades instead of
+  rendering tofu on a terminal without Nerd Fonts;
+- the glyphs that *are* the contract (states, arrows, box-drawing, blocks,
+  spinner — the tables above), which never change.
+
+An app registers its own domain glyphs at boot, deliberately and typed:
+
+```js
+import { registerGlyphs, glyph } from '@henryavila/blink-tui';
+
+registerGlyphs({
+  laravel:   { nerd: '\ue73f', unicode: '◆', ascii: '[la]' },
+  tailscale: { nerd: '\uf0e8', unicode: '◈', ascii: '[ts]' },
+});
+
+glyph('laravel'); // → the right variant for the active icon set
+```
+
+**The common pack.** Because most dev-tool TUIs reuse the same handful of
+domains, blink offers an **optional** convenience pack — `COMMON_DOMAINS`
+(`database`, `mysql`, `postgresql`, `redis`, `docker`, `github`, `git`, `ssh`,
+`nodejs`, `php`, `python`, `vim`, `apple`, `linux`, `ubuntu`, `font`, `ai`,
+`bolt`). It is **not** registered automatically; an app opts in and may extend
+or override any entry:
+
+```js
+registerGlyphs(COMMON_DOMAINS);              // take the pack
+registerGlyphs({ database: { nerd: '…' } }); // override one entry
+```
+
+**Prime directive.** A glyph that only makes sense for one app stays in that
+app. Don't add `laravel`/`tailscale`/`syncthing` to blink core — register them
+in the app. The reference kit (`ui_kits/tui_app/`) demonstrates this: it calls
+`registerGlyphs(COMMON_DOMAINS)` itself, exactly as a real product would.
 
 ### What is forbidden
 

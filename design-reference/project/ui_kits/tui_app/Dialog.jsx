@@ -1,12 +1,18 @@
-// Dialog.jsx — a centred modal with a double-line border. The default action
-// renders in inverse-accent video; the alternative is plain. No backdrop blur,
-// no fade, no transform — it simply replaces focus.
+// Dialog.jsx — a centred modal: a focused (lavender) rounded pane that overlays
+// the app. The default action renders in inverse-accent video; the alternative
+// is plain. No backdrop blur, no fade, no transform, no double border — it
+// simply replaces focus.
 //
-// title, variant ("default"|"error"), lines: string[] of body rows,
-// actions: [{ key, label, primary }]
+// INTENT, NOT STYLE:
+//   tone     'default' | 'error'  — 'default' is a focused (lavender) modal;
+//            'error' recolours it red. The consumer never picks the shape.
+//   title    modal title (inside the top border)
+//   body     either lines: string[] (plain) OR children (rich body — e.g. a
+//            DescriptionList or wrapped message). children wins when both set.
+//   actions  [{ key, label, primary }] — the primary renders inverse-accent.
 
-function Dialog({ title, variant = "default", lines = [], actions = [], width = 44 }) {
-  const isError = variant === "error";
+function Dialog({ title, tone = "default", lines = [], children, actions = [], width = 44 }) {
+  const isError = tone === "error";
   return (
     <div style={{
       // overlay: a plain flex centerer over the app. No blur/opacity.
@@ -14,11 +20,11 @@ function Dialog({ title, variant = "default", lines = [], actions = [], width = 
       alignItems: "center", justifyContent: "center",
     }}>
       <div style={{ width: `${width}ch`, background: "var(--bg)" }}>
-        <Pane title={title} variant={isError ? "error" : "double"}
-              focused={!isError} flex="0 0 auto">
+        <Pane title={title} tone={isError ? "error" : "focus"}
+              flex="0 0 auto">
           <div style={{ display: "flex", flexDirection: "column", padding: "0 1ch" }}>
             <div style={{ height: "var(--cell-h)" }} />
-            {lines.map((ln, i) => (
+            {children != null ? children : lines.map((ln, i) => (
               <div key={i} style={{ whiteSpace: "pre", color: "var(--fg)", lineHeight: "var(--cell-h)" }}>
                 {ln}
               </div>

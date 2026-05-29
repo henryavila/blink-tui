@@ -21,20 +21,20 @@
 </head>
 <body>
 <div class="card">
-  <div class="lbl">empty · placeholder in --fg-disabled</div>
-<pre><span class="frame">┌─ search ─────────────────────────────────────────────┐
+  <div class="lbl">empty · single-line rounded · muted border · placeholder in --fg-disabled</div>
+<pre><span class="frame">╭─ search ─────────────────────────────────────────────╮
 │  </span><span class="placeholder">type to filter…</span><span class="frame">                                     │
-└──────────────────────────────────────────────────────┘</span></pre>
+╰──────────────────────────────────────────────────────╯</span></pre>
 
-  <div class="lbl">focused + typing · cursor is ▎ blinking at 1 Hz with step-end timing</div>
+  <div class="lbl">focused + typing · border recolours lavender · cursor is ▎ blinking at 1 Hz, step-end</div>
 <pre><span class="focus">╭─ search ─────────────────────────────────────────────╮
 │  </span>postgres<span class="cursor">▎</span><span class="focus">                                              │
 ╰──────────────────────────────────────────────────────╯</span></pre>
 
-  <div class="lbl">error · double border tinted red · message below field, one line</div>
-<pre><span style="color:var(--state-err)">╔═ ssh key ════════════════════════════════════════════╗
-║  </span>~/.ssh/id_ed25519_old<span class="cursor">▎</span><span style="color:var(--state-err)">                                ║
-╚══════════════════════════════════════════════════════╝</span>
+  <div class="lbl">error · same rounded glyphs tinted red · message below field, one line</div>
+<pre><span style="color:var(--state-err)">╭─ ssh key ────────────────────────────────────────────╮
+│  </span>~/.ssh/id_ed25519_old<span class="cursor">▎</span><span style="color:var(--state-err)">                                │
+╰──────────────────────────────────────────────────────╯</span>
   <span style="color:var(--state-err)">✗</span> <span class="fg-muted">no such file or directory</span></pre>
 </div>
 </body>

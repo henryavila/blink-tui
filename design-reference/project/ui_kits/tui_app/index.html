@@ -58,6 +58,11 @@
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
 
+// ---- app opts into glyphs (blink core ships none) ----
+// This reference app brings its own domain glyphs: it takes the optional
+// COMMON_DOMAINS convenience pack. Components resolve them by NAME via glyph().
+registerGlyphs(COMMON_DOMAINS);
+
 // ---- scale the fixed canvas to fit the viewport (letterbox) ----
 function fitCanvas() {
   const stage = document.getElementById("stage");
@@ -68,23 +73,16 @@ function fitCanvas() {
 }
 window.addEventListener("resize", fitCanvas);
 
-// ---- demo data: a fictional local-services manager ----
+// ---- demo data: a fictional local-services manager ---- (intent-only)
 const SERVICES = [
-  { id: "pg",     domain: DOMAIN.postgresql, domainColor: "var(--ctp-blue)",     name: "postgres@14.10", state: "ok",      detail: "data/pg/main",        port: 5432 },
-  { id: "redis",  domain: DOMAIN.redis,      domainColor: "var(--ctp-red)",      name: "redis@7.2",      state: "ok",      detail: "/var/redis",          port: 6379 },
-  { id: "docker", domain: DOMAIN.docker,     domainColor: "var(--ctp-sky)",      name: "docker",         state: "pending", detail: "28 containers · 4 stopped", port: null },
-  { id: "nginx",  domain: DOMAIN.ubuntu,     domainColor: "var(--ctp-peach)",    name: "nginx",          state: "drift",   detail: "config out-of-date",  port: 80 },
-  { id: "node",   domain: DOMAIN.nodejs,     domainColor: "var(--ctp-green)",    name: "node · api",     state: "ok",      detail: "pid 4821 · :3000",    port: 3000 },
-  { id: "graf",   domain: DOMAIN.database,   domainColor: "var(--fg-muted)",     name: "grafana",        state: "err",     detail: "missing on host",     port: 3001 },
-  { id: "ssh",    domain: DOMAIN.ssh,        domainColor: "var(--ctp-yellow)",   name: "ssh-agent",      state: "ok",      detail: "3 keys loaded",       port: null },
+  { id: "pg",     domain: "postgresql", name: "postgres@14.10", state: "ok",      detail: "data/pg/main",        port: 5432 },
+  { id: "redis",  domain: "redis",      name: "redis@7.2",      state: "ok",      detail: "/var/redis",          port: 6379 },
+  { id: "docker", domain: "docker",     name: "docker",         state: "pending", detail: "28 containers · 4 stopped", port: null },
+  { id: "nginx",  domain: "ubuntu",     name: "nginx",          state: "drift",   detail: "config out-of-date",  port: 80 },
+  { id: "node",   domain: "nodejs",     name: "node · api",     state: "ok",      detail: "pid 4821 · :3000",    port: 3000 },
+  { id: "graf",   domain: "database",   name: "grafana",        state: "err",     detail: "missing on host",     port: 3001 },
+  { id: "ssh",    domain: "ssh",        name: "ssh-agent",      state: "ok",      detail: "3 keys loaded",       port: null },
 ];
-
-const STATE_GLYPH = {
-  ok:      { g: STATE.check,  c: "var(--state-ok)" },
-  err:     { g: STATE.cross,  c: "var(--state-err)" },
-  pending: { g: STATE.circle, c: "var(--state-pending)" },
-  drift:   { g: STATE.half,   c: "var(--state-drift)" },
-};
 
 function useSpinner(active) {
   const [i, setI] = useState(0);
@@ -174,14 +172,11 @@ function App() {
 
   // left pane rows
   const rows = filtered.map((s) => {
-    const sg = STATE_GLYPH[s.state];
     const isSyncing = syncing === s.id;
     return {
       id: s.id,
       domain: s.domain,
-      domainColor: s.domainColor,
-      glyph: isSyncing ? spin : sg.g,
-      glyphColor: isSyncing ? "var(--state-info)" : sg.c,
+      state: isSyncing ? "idempotent" : s.state,
       label: s.name,
       meta: isSyncing ? "applying…" : s.detail,
     };
@@ -225,12 +220,12 @@ function App() {
       {/* two-pane body */}
       <div style={{ display: "flex", flex: 1, minHeight: 0, gap: 0 }}>
         <div style={{ display: "flex", flexDirection: "column", flex: "1 1 56%", minWidth: 0 }}>
-          <Pane title={`services (${filtered.length})`} focused={pane === "left" && !dialog}>
+          <Pane title={`services (${filtered.length})`} tone={pane === "left" && !dialog ? "focus" : "resting"}>
             <List rows={rows} focusedId={current ? current.id : null} />
           </Pane>
         </div>
         <div style={{ display: "flex", flexDirection: "column", flex: "1 1 44%", minWidth: 0 }}>
-          <Pane title="detail" focused={pane === "right" && !dialog}>
+          <Pane title="detail" tone={pane === "right" && !dialog ? "focus" : "resting"}>
             {current ? <Detail s={services.find((x) => x.id === current.id)} counts={counts} /> : <Empty />}
           </Pane>
         </div>
@@ -247,7 +242,7 @@ function App() {
           actions={[{ key: " N ", label: "keep", primary: true }, { key: "y", label: "delete" }]} />
       ) : null}
       {dialog === "error" ? (
-        <Dialog title="error" variant="error"
+        <Dialog title="error" tone="error"
           lines={[`${STATE.cross} ${current ? current.name : "service"} is missing on host`, "cannot apply a service that isn't installed"]}
           actions={[{ key: " ↵ ", label: "dismiss", primary: true }, { key: "l", label: "view log" }]} />
       ) : null}
@@ -267,22 +262,22 @@ function App() {
 
 function Detail({ s, counts }) {
   if (!s) return <Empty />;
-  const sg = STATE_GLYPH[s.state];
+  const sg = stateGlyph(s.state);
   const stateWord = { ok: "running", err: "missing", pending: "starting", drift: "drift" }[s.state];
   return (
     <div style={{ display: "flex", flexDirection: "column", whiteSpace: "pre" }}>
       <div style={{ lineHeight: "18px" }}>
-        <span style={{ color: s.domainColor }}>{s.domain}</span>{"  "}
+        <span style={{ color: glyphColor(s.domain) }}>{glyph(s.domain)}</span>{"  "}
         <span style={{ color: "var(--fg)" }}>{s.name}</span>
       </div>
       <div style={{ height: "18px" }} />
-      <Row k="state"  v={<span style={{ color: sg.c }}>{sg.g} {stateWord}</span>} />
+      <Row k="state"  v={<span style={{ color: sg.color }}>{sg.glyph} {stateWord}</span>} />
       <Row k="path"   v={s.detail} />
       <Row k="port"   v={s.port == null ? "—" : String(s.port)} />
       <div style={{ height: "18px" }} />
       <div style={{ color: "var(--fg-faint)", lineHeight: "18px" }}>{NAV.depends} actions</div>
       <div style={{ color: "var(--fg-dim)", lineHeight: "18px" }}>
-        {s.state === "ok" ? `${STATE.rerun} a  reapply (idempotent)` : `${DOMAIN.bolt} a  apply now`}
+        {s.state === "ok" ? `${STATE.rerun} a  reapply (idempotent)` : `${glyph("bolt")} a  apply now`}
       </div>
       <div style={{ color: "var(--fg-dim)", lineHeight: "18px" }}>{STATE.cross} d  remove</div>
     </div>

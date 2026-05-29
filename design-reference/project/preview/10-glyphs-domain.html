@@ -2,19 +2,29 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>blink — Domain glyphs</title>
+<title>blink — Glyph registry</title>
 <link rel="stylesheet" href="../colors_and_type.css">
 <link rel="stylesheet" href="preview.css">
 <style>
+  .card { gap: 8px; }
   .glyph-grid { grid-template-columns: repeat(9, 1fr); gap: 4px 8px; }
   .glyph-cell { padding: 4px 0; }
   .glyph-cell .g { font-size: 20px; }
   .glyph-cell .lbl { font-size: 10px; }
+  .api {
+    white-space: pre; background: var(--bg-elevated);
+    padding: 8px 10px; color: var(--fg-muted); font-size: 12px; line-height: 1.5;
+  }
+  .api .fn { color: var(--accent); }
+  .api .str { color: var(--state-ok); }
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="cap">domain glyphs · CaskaydiaMono Nerd Font private-use codepoints · never invented</div>
+  <div class="cap">domain glyphs are app CONTENT, not framework contract · blink core ships none · the app registers its own at boot</div>
+  <div class="api"><span class="fn">registerGlyphs</span>({ laravel: { nerd: <span class="str">'\ue73f'</span>, unicode: <span class="str">'◆'</span>, ascii: <span class="str">'[la]'</span> } })
+<span class="fn">glyph</span>(<span class="str">'laravel'</span>) → resolves for the active icon set · nerd → unicode → ascii</div>
+  <div class="cap">optional convenience pack · COMMON_DOMAINS · opt in with registerGlyphs(COMMON_DOMAINS) · extend or override freely</div>
   <div class="glyph-grid">
     <div class="glyph-cell"><div class="g"></div><div class="lbl">database</div></div>
     <div class="glyph-cell"><div class="g" style="color:var(--ctp-sapphire)"></div><div class="lbl">mysql</div></div>
@@ -35,7 +45,7 @@
     <div class="glyph-cell"><div class="g" style="color:var(--ctp-lavender)"></div><div class="lbl">ai</div></div>
     <div class="glyph-cell"><div class="g" style="color:var(--ctp-yellow)"></div><div class="lbl">bolt</div></div>
   </div>
-  <div class="cap">if the cell shows □ your font isn't a Nerd Font · install CaskaydiaMono NF locally</div>
+  <div class="cap">a glyph that only one app needs (laravel, tailscale, syncthing) stays in that app · never added to core</div>
 </div>
 </body>
 </html>

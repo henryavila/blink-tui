@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — Banner</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .card { gap: 10px; }
+  .banner { white-space: pre; padding: 0 1ch; color: var(--fg-muted); }
+  .banner .g { display: inline-block; width: 1ch; }
+  .info .g { color: var(--state-info); }
+  .success .g { color: var(--state-ok); }
+  .warn .g { color: var(--state-warn); }
+  .lbl { color: var(--fg-faint); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="lbl">one-line, non-blocking, in-flow notice · sits between content and footer · never overlays, never animates · semantic colour lives on the leading glyph, the message stays calm</div>
+  <div class="banner success"><span class="g">✓</span> auto-selected databases/mysql, databases/redis — required by web/valet</div>
+  <div class="banner info"><span class="g">↳</span> filtered to 4 bundles matching "db" — press esc to clear</div>
+  <div class="banner warn"><span class="g">⚠</span> python drift — installed config is out of date, apply will refresh it</div>
+</div>
+</body>
+</html>

@@ -11,43 +11,45 @@
   pre { margin: 0; line-height: 1.1; white-space: pre; color: var(--border); }
   .lbl { color: var(--fg-dim); font-size: 11px; margin-top: 4px; }
   .focus { color: var(--border-focus); }
+  .err { color: var(--state-err); }
   .col { display: flex; flex-direction: column; gap: 2px; }
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="cap">all borders are glyphs · never CSS · use double-line for focused or modal</div>
+  <div class="cap">all borders are glyphs · never CSS · single-line rounded is the house style · focus &amp; modal are signalled by colour, never by a heavier line</div>
   <div class="row">
     <div class="col">
-<pre>┌─────────────┐
+<pre>╭─────────────╮
 │ default     │
 │ pane        │
-└─────────────┘</pre>
-      <div class="lbl">single · ┌─┐│└┘</div>
+╰─────────────╯</pre>
+      <div class="lbl">rounded · default · ╭─╮│╰╯</div>
     </div>
     <div class="col">
 <pre class="focus">╭─────────────╮
 │ focused     │
 │ pane        │
 ╰─────────────╯</pre>
-      <div class="lbl">rounded · ╭─╮│╰╯</div>
+      <div class="lbl">focus · lavender recolour</div>
     </div>
     <div class="col">
-<pre>╔═════════════╗
-║ modal /     ║
-║ emphasis    ║
-╚═════════════╝</pre>
-      <div class="lbl">double · ╔═╗║╚╝</div>
+<pre class="err">╭─────────────╮
+│ error /     │
+│ modal       │
+╰─────────────╯</pre>
+      <div class="lbl">error · red recolour</div>
     </div>
     <div class="col">
-<pre>┌──────┬──────┐
+<pre>╭──────┬──────╮
 │ left │ right│
 ├──────┼──────┤
 │ a    │ b    │
-└──────┴──────┘</pre>
+╰──────┴──────╯</pre>
       <div class="lbl">tees · ├ ┤ ┬ ┴ ┼</div>
     </div>
   </div>
+  <div class="cap">square corners (┌ ┐ └ ┘) remain as a legacy opt-out · the double-line border is retired from blink</div>
 </div>
 </body>
 </html>

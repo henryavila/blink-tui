@@ -12,12 +12,15 @@ browse, inspect, and act on local development services.
 ui_kits/tui_app/
 ├── README.md              ← this file
 ├── index.html             ← interactive demo (100×30 cells)
-├── glyphs.js              ← exports STATE / NAV / DOMAIN glyph constants
+├── glyphs.js              ← core STATE / NAV / BOX / SPINNER + registerGlyphs/glyph registry
 ├── Pane.jsx               ← box-drawn pane with optional title
-├── List.jsx               ← rows with ▶ focus indicator + state glyphs
+├── List.jsx               ← rows: checkbox + state + domain columns, windowed
+├── Header.jsx             ← top status bar (mark + title + right slot)
+├── Banner.jsx             ← one-line in-flow notice (info/success/warn)
+├── DescriptionList.jsx    ← key/value block for detail panes
 ├── Footer.jsx             ← bottom hotkey bar (always visible)
 ├── Input.jsx              ← single-line text field with ▎ cursor
-└── Dialog.jsx             ← modal with double border
+└── Dialog.jsx             ← modal: rounded lavender pane (lines or rich children)
 ```
 
 ## How the demo works
@@ -48,8 +51,9 @@ of the blink contract, with light state for the demo:
 - Focused pane recoloured by border glyph alone (lavender)
 - List rows with `▶` arrow focus + `surface1` fill
 - State glyphs (`✓ ✗ ◯ ◐ ⚠ ↻`) on each row
-- Domain glyphs (Nerd Font) for service type
-- Modal dialog with double-line border
+- Domain glyphs registered by the app (`registerGlyphs(COMMON_DOMAINS)`) — blink
+  core ships none
+- Modal dialog as a focused (lavender) rounded pane that overlays
 - Footer bar with hotkey chips in inverse video
 - Cursor blink at 1 Hz, step-end (no fade)
 - Braille spinner at 80 ms / frame, only while syncing
