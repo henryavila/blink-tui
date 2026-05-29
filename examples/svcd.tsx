@@ -257,7 +257,7 @@ function Detail({ service }: { service: Service }): React.ReactElement {
       <Text>
         {iconSet === 'nerd' ? (
           <>
-            <Text color={glyphColor(service.domain) ?? t.fgMuted}>{g(service.domain)}</Text>
+            <Text color={t[glyphColor(service.domain) ?? 'fgMuted']}>{g(service.domain)}</Text>
             {'  '}
           </>
         ) : null}
