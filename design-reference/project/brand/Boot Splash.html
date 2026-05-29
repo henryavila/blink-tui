@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>blink — boot splash</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; width: 100%; background: var(--ctp-crust); overflow: hidden; }
+  #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--ctp-crust); }
+  #canvas {
+    width: 840px; height: 540px; background: var(--bg); color: var(--fg);
+    font-family: var(--font-mono); font-size: 14px; line-height: 18px; letter-spacing: 0;
+    font-feature-settings: "liga" 0, "calt" 0;
+    transform-origin: center center; position: relative;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    white-space: pre;
+  }
+  .logo { font-size: 40px; line-height: 46px; color: var(--fg); }
+  .logo .accent { color: var(--accent); }
+  .blink { animation: bk 1s step-end infinite; }
+  @keyframes bk { 50% { opacity: 0; } }
+  .ver { color: var(--fg-dim); font-size: 13px; margin-top: 4px; }
+  .steps { margin-top: 34px; display: flex; flex-direction: column; gap: 2px; width: 46ch; }
+  .step { display: flex; align-items: baseline; white-space: pre; }
+  .step .g { width: 2ch; flex-shrink: 0; }
+  .step .lbl { color: var(--fg-muted); }
+  .step .meta { color: var(--fg-dim); margin-left: auto; }
+  .ok { color: var(--state-ok); }
+  .pending { color: var(--fg-disabled); }
+  .info { color: var(--state-info); }
+  .ready { margin-top: 30px; color: var(--fg-faint); font-size: 13px; opacity: 0; }
+  .ready.show { opacity: 1; }
+  .ready .k { color: var(--fg-inverse); background: var(--bg-inverse); padding: 0 1ch; }
+  .foot { position: absolute; bottom: 0; left: 0; right: 0;
+    background: var(--bg-sunken); color: var(--fg-faint); padding: 0 1ch;
+    display: flex; justify-content: space-between; white-space: pre; }
+</style>
+</head>
+<body>
+<div id="stage"><div id="canvas">
+  <div class="logo">bl<span class="accent blink">▎</span>nk</div>
+  <div class="ver">v0.4.0 · a framework for building elegant TUI apps</div>
+
+  <div class="steps" id="steps">
+    <div class="step" data-meta="14 modules"><span class="g pending">◯</span><span class="lbl">load runtime</span><span class="meta"></span></div>
+    <div class="step" data-meta="100 × 30 cells"><span class="g pending">◯</span><span class="lbl">measure terminal</span><span class="meta"></span></div>
+    <div class="step" data-meta="theme · mocha"><span class="g pending">◯</span><span class="lbl">apply palette</span><span class="meta"></span></div>
+    <div class="step" data-meta="CaskaydiaMono NF"><span class="g pending">◯</span><span class="lbl">resolve glyph font</span><span class="meta"></span></div>
+    <div class="step" data-meta="3 panes"><span class="g pending">◯</span><span class="lbl">mount layout tree</span><span class="meta"></span></div>
+    <div class="step" data-meta="keyboard"><span class="g pending">◯</span><span class="lbl">bind input</span><span class="meta"></span></div>
+  </div>
+
+  <div class="ready" id="ready"><span class="k">↵</span>  press any key to continue</div>
+
+  <div class="foot">
+    <span>▎ blink</span>
+    <span id="footstat">↻ booting…</span>
+  </div>
+</div></div>
+
+<script>
+  const SPIN = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"];
+  function fit() {
+    const st = document.getElementById("stage"), c = document.getElementById("canvas");
+    c.style.transform = "scale(" + Math.min(st.clientWidth/840, st.clientHeight/540) + ")";
+  }
+  window.addEventListener("resize", fit); fit();
+
+  const steps = [...document.querySelectorAll(".step")];
+  const footstat = document.getElementById("footstat");
+  let si = 0, frame = 0, active = null;
+
+  // spinner ticks on the active step
+  const spinTimer = setInterval(() => {
+    frame = (frame + 1) % SPIN.length;
+    if (active) active.querySelector(".g").textContent = SPIN[frame];
+    footstat.textContent = "↻ booting " + Math.min(si, steps.length) + "/" + steps.length;
+  }, 80);
+
+  function advance() {
+    if (active) {
+      const g = active.querySelector(".g");
+      g.textContent = "✓"; g.className = "g ok";
+      active.querySelector(".meta").textContent = active.dataset.meta;
+    }
+    if (si >= steps.length) {
+      clearInterval(spinTimer);
+      footstat.textContent = "✓ ready";
+      document.getElementById("ready").classList.add("show");
+      return;
+    }
+    active = steps[si]; si++;
+    active.querySelector(".g").className = "g info";
+    setTimeout(advance, 300 + Math.random() * 380);
+  }
+  setTimeout(advance, 500);
+
+  // restart loop so the splash keeps demoing
+  function loop() {
+    setTimeout(() => {
+      steps.forEach(s => { s.querySelector(".g").textContent = "◯"; s.querySelector(".g").className = "g pending"; s.querySelector(".meta").textContent = ""; });
+      document.getElementById("ready").classList.remove("show");
+      si = 0; active = null;
+      const t = setInterval(() => { frame=(frame+1)%SPIN.length; if(active) active.querySelector(".g").textContent=SPIN[frame]; footstat.textContent="↻ booting "+Math.min(si,steps.length)+"/"+steps.length; }, 80);
+      window.__spin = t;
+      // reuse advance with fresh spinTimer
+      (function run(){
+        if (active) { const g=active.querySelector(".g"); g.textContent="✓"; g.className="g ok"; active.querySelector(".meta").textContent=active.dataset.meta; }
+        if (si >= steps.length) { clearInterval(t); footstat.textContent="✓ ready"; document.getElementById("ready").classList.add("show"); loop(); return; }
+        active = steps[si]; si++; active.querySelector(".g").className="g info";
+        setTimeout(run, 300 + Math.random()*380);
+      })();
+    }, 4200);
+  }
+  loop();
+</script>
+</body>
+</html>

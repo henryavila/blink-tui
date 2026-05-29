@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — Type scale</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .card { gap: 6px; }
+  .row {
+    display: grid;
+    grid-template-columns: 10ch 8ch 1fr;
+    column-gap: 2ch;
+    align-items: baseline;
+  }
+  .row .tok { color: var(--fg-dim); font-size: 12px; }
+  .row .px  { color: var(--fg-faint); font-size: 12px; }
+  .row .sp  { color: var(--fg); }
+  .star { color: var(--accent); }
+  .cap { padding-top: 4px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="cap">live TUI screens hold at <span class="star">14px</span> · the scale is only for HTML mocks of docs / READMEs</div>
+
+  <div class="row"><span class="tok">--fs-xs</span><span class="px">12 / 16</span><span class="sp" style="font-size:12px;line-height:16px">footnote · dim status text</span></div>
+  <div class="row"><span class="tok">--fs-sm</span><span class="px">13 / 18</span><span class="sp" style="font-size:13px;line-height:18px">mobile-mosh fallback · 60×20 grid</span></div>
+  <div class="row"><span class="tok">--fs-base ★</span><span class="px">14 / 18</span><span class="sp" style="font-size:14px;line-height:18px">canonical TUI body · use this</span></div>
+  <div class="row"><span class="tok">--fs-md</span><span class="px">16 / 22</span><span class="sp" style="font-size:16px;line-height:22px">zoomed reading / docs</span></div>
+  <div class="row"><span class="tok">--fs-lg</span><span class="px">20 / 26</span><span class="sp" style="font-size:20px;line-height:26px">banner ASCII</span></div>
+  <div class="row"><span class="tok">--fs-xl</span><span class="px">28 / 34</span><span class="sp" style="font-size:28px;line-height:34px">splash · logo</span></div>
+</div>
+</body>
+</html>

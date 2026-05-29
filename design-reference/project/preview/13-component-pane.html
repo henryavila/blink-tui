@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — Pane</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .card { gap: 8px; flex-direction: row; align-items: flex-start; }
+  pre { margin: 0; line-height: 1.2; white-space: pre; }
+  .frame { color: var(--border); }
+  .focus { color: var(--border-focus); }
+  .title { color: var(--fg-muted); }
+  .col { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .lbl { color: var(--fg-faint); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="col">
+    <div class="lbl">default pane · titled inside top border</div>
+<pre><span class="frame">┌─</span><span class="title"> services </span><span class="frame">──────────────────────┐
+│  </span>postgres@14.10<span class="frame">                  │
+│  </span>redis@7.2<span class="frame">                       │
+│  </span>docker  <span class="fg-dim">(28 containers)</span><span class="frame">         │
+│                                  │
+└──────────────────────────────────┘</span></pre>
+  </div>
+
+  <div class="col">
+    <div class="lbl">focused pane · double-line · accent-coloured border</div>
+<pre><span class="focus">╔═</span><span style="color:var(--accent)"> services </span><span class="focus">══════════════════════╗
+║  </span>postgres@14.10<span class="focus">                  ║
+║  </span>redis@7.2<span class="focus">                       ║
+║  </span>docker  <span class="fg-dim">(28 containers)</span><span class="focus">         ║
+║                                  ║
+╚══════════════════════════════════╝</span></pre>
+  </div>
+</div>
+</body>
+</html>

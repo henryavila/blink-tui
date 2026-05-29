@@ -1,0 +1,63 @@
+{
+  "name": "@henryavila/blink-tui",
+  "version": "0.1.0",
+  "description": "blink — a framework for building modern, elegant TUI apps. Catppuccin-themed Ink (React for the terminal) primitives, dual-mode Nerd Font glyphs, and a strict character-cell visual contract.",
+  "keywords": [
+    "tui",
+    "terminal",
+    "ink",
+    "react",
+    "cli",
+    "catppuccin",
+    "nerd-font",
+    "blink"
+  ],
+  "license": "MIT",
+  "author": "Henry Avila <personal@henryavila.com>",
+  "type": "module",
+  "files": [
+    "dist",
+    "assets/fonts",
+    "README.md"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "example": "tsx examples/svcd.tsx",
+    "lint:contract": "node scripts/check-contract.mjs"
+  },
+  "peerDependencies": {
+    "ink": "^5.0.0",
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.19",
+    "@types/react": "^18.3.12",
+    "ink": "^5.1.0",
+    "ink-testing-library": "^4.0.0",
+    "react": "^18.3.1",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

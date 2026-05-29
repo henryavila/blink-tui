@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — Dialog</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .card { gap: 4px; align-items: stretch; }
+  pre { margin: 0; line-height: 1.2; white-space: pre; }
+  .frame { color: var(--border); }
+  .focus { color: var(--border-focus); }
+  .warn { color: var(--state-warn); }
+  .err { color: var(--state-err); }
+  .title { color: var(--accent); }
+  .lbl { color: var(--fg-faint); font-size: 11px; }
+  .row { display: flex; gap: 3ch; align-items: flex-start; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="lbl">dialog · double border · centred · default action shown UPPER, alt lower</div>
+  <div class="row">
+<pre><span class="focus">╔═</span><span class="title"> delete branch </span><span class="focus">═══════════════════╗
+║                                      ║
+║  </span>this will remove the local branch<span class="focus">   ║
+║  </span><span class="warn">⚠</span> feature/login   <span class="fg-dim">↳ 3 unmerged</span><span class="focus">     ║
+║                                      ║
+║  </span><span style="background:var(--accent);color:var(--ctp-base);padding:0 1ch"> N </span> keep   <span style="padding:0 1ch">y</span> delete<span class="focus">              ║
+╚══════════════════════════════════════╝</span></pre>
+
+<pre><span style="color:var(--state-err)">╔═ </span><span style="color:var(--state-err)">error</span><span style="color:var(--state-err)"> ═══════════════════════════╗
+║                                      ║
+║  </span><span class="err">✗</span> postgres failed to start<span style="color:var(--state-err)">          ║
+║  </span><span class="fg-dim">port 5432 already in use</span><span style="color:var(--state-err)">            ║
+║                                      ║
+║  </span><span style="background:var(--accent);color:var(--ctp-base);padding:0 1ch"> ↵ </span> dismiss   <span style="padding:0 1ch">l</span> view log<span style="color:var(--state-err)">         ║
+╚══════════════════════════════════════╝</span></pre>
+  </div>
+</div>
+</body>
+</html>

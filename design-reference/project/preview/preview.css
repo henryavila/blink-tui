@@ -1,0 +1,110 @@
+/* Shared styles for preview cards (Design System tab).
+   Loaded from preview/NN-card.html → ../colors_and_type.css must be imported first. */
+
+* { box-sizing: border-box; }
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  letter-spacing: 0;
+  font-feature-settings: "liga" 0, "calt" 0;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+.card {
+  width: 100%;
+  height: 100%;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* The "TUI pane" used inside many cards. Border is drawn via box chars
+   in markup, so the .pane element itself only handles layout/colour. */
+.pane {
+  display: flex;
+  flex-direction: column;
+  white-space: pre;
+}
+
+/* A row of monospaced cells. white-space: pre keeps every space honest. */
+.row { white-space: pre; }
+
+/* Two-column display: label | swatch/specimen */
+.kv {
+  display: grid;
+  grid-template-columns: 16ch 1fr;
+  column-gap: 2ch;
+  row-gap: 4px;
+  align-items: center;
+}
+.kv .k { color: var(--fg-dim); }
+.kv .v { color: var(--fg); }
+
+/* Swatches — strictly used in preview cards only, never in production UI.
+   In product UI, "colour" is communicated via the glyph itself, never a chip. */
+.swatch-row {
+  display: flex;
+  gap: 0;
+  align-items: stretch;
+}
+.swatch {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px 10px;
+  min-height: 56px;
+  color: var(--fg);
+  font-size: 12px;
+  line-height: 1.2;
+}
+.swatch .hex { color: inherit; opacity: 0.65; }
+.swatch .name { font-size: 13px; }
+
+/* Glyph grid used by 08/09/10 */
+.glyph-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px 12px;
+}
+.glyph-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 0;
+  background: var(--bg-elevated);
+}
+.glyph-cell .g {
+  font-size: 22px;
+  line-height: 1;
+  color: var(--fg);
+}
+.glyph-cell .lbl {
+  font-size: 11px;
+  color: var(--fg-dim);
+  white-space: nowrap;
+}
+
+/* Section captions */
+.cap {
+  color: var(--fg-faint);
+  font-size: 12px;
+}
+
+/* For inverse-video labels */
+.tag {
+  display: inline-block;
+  padding: 0 1ch;
+  background: var(--accent);
+  color: var(--ctp-base);
+}

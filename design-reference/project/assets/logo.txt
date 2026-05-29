@@ -1,0 +1,35 @@
+         bl▎nk
+
+   bl▎nk  ·  a framework for building elegant TUI apps
+
+
+  ┌─────────────────────────────────────────────────────────┐
+  │                                                         │
+  │   bl▎nk                                                 │
+  │   build modern, elegant terminal apps                   │
+  │                                                         │
+  └─────────────────────────────────────────────────────────┘
+
+  PRIMARY LOCKUP
+    the cursor block replaces the "i" and blinks at 1 Hz:
+
+        bl▎nk
+
+  ALT LOCKUP (small sizes / when bl▎nk reads as a typo)
+    full word, blinking block trailing like a live prompt:
+
+        blink█
+
+  SHORT FORM (in-app header / window-title prefix)
+
+        ▎ blink
+
+  FAVICON (single cell)
+
+        ▎     ← the blinking block, accent = lavender (#b4befe)
+
+  RULES
+    · always lowercase. never "Blink" mid-sentence, never "BLINK".
+    · the block (▎ or █) is the only element that may animate (1 Hz, step-end).
+    · accent the block in lavender; set the wordmark in --fg.
+    · never add a tagline inside the short form or favicon.

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — List</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .card { gap: 8px; }
+  .list {
+    display: flex; flex-direction: column; white-space: pre;
+    background: var(--bg); padding: 8px 0;
+  }
+  .row { padding: 0 2ch; }
+  .row.focused { background: var(--bg-focused); }
+  .row.selected { background: var(--bg-selected); }
+  .row .arrow { color: var(--accent); }
+  .row .blank { color: transparent; }
+  .meta { color: var(--fg-dim); }
+  .ok { color: var(--state-ok); }
+  .pending { color: var(--state-pending); }
+  .err { color: var(--state-err); }
+  .drift { color: var(--state-drift); }
+  .lbl { color: var(--fg-faint); font-size: 11px; padding: 0 2ch; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="lbl">list rows · ▶ marks focus · surface1 fills focus · surface0 fills selected · selection is independent of focus</div>
+  <div class="list">
+    <div class="row"><span class="blank">▶</span> <span class="ok">✓</span> postgres@14.10        <span class="meta">↳ data/pg/main</span></div>
+    <div class="row selected"><span class="blank">▶</span> <span class="ok">✓</span> redis@7.2             <span class="meta">↳ /var/redis</span></div>
+    <div class="row focused"><span class="arrow">▶</span> <span class="pending">◯</span> docker                <span class="meta">28 containers · 4 stopped</span></div>
+    <div class="row"><span class="blank">▶</span> <span class="drift">◐</span> nginx                 <span class="meta">drift · config out-of-date</span></div>
+    <div class="row"><span class="blank">▶</span> <span class="err">✗</span> grafana               <span class="meta">missing on host</span></div>
+    <div class="row"><span class="blank">▶</span> <span class="ok">✓</span> ssh-agent             <span class="meta">↳ 3 keys loaded</span></div>
+  </div>
+</div>
+</body>
+</html>

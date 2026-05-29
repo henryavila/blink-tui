@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>blink — build elegant TUI apps</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon-16.png">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  body {
+    color: var(--fg); font-family: var(--font-mono);
+    font-size: 15px; line-height: 22px; letter-spacing: 0;
+    font-feature-settings: "liga" 0, "calt" 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  .accent { color: var(--accent); }
+  .dim { color: var(--fg-dim); }
+  .muted { color: var(--fg-muted); }
+  .faint { color: var(--fg-faint); }
+  .ok { color: var(--state-ok); }
+  .info { color: var(--state-info); }
+  .warn { color: var(--state-warn); }
+  .blink { animation: bk 1s step-end infinite; }
+  @keyframes bk { 50% { opacity: 0; } }
+  pre { margin: 0; white-space: pre; font: inherit; }
+
+  /* layout */
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+  /* top nav — inverse bar, full bleed */
+  nav {
+    background: var(--bg-sunken); color: var(--fg-muted);
+    line-height: 36px;
+  }
+  nav .wrap { display: flex; justify-content: space-between; align-items: center; }
+  nav .brand { color: var(--fg); }
+  nav .brand .accent { color: var(--accent); }
+  nav .links { display: flex; gap: 3ch; }
+  nav a { color: var(--fg-muted); text-decoration: none; }
+  nav a:focus, nav a.active { color: var(--fg); }
+  nav a .accent { color: var(--accent); }
+
+  /* hero */
+  .hero { padding: 64px 0 28px; }
+  .hero h1 { font-size: 64px; line-height: 70px; margin: 0; font-weight: 400; color: var(--fg); background: none; padding: 0; }
+  .hero h1 .accent { color: var(--accent); }
+  .hero .tag { font-size: 20px; line-height: 28px; color: var(--fg-muted); margin: 14px 0 0; max-width: 52ch; }
+  .hero .sub { color: var(--fg-dim); margin-top: 6px; }
+
+  /* install box — box-drawn, never CSS border */
+  .install { margin-top: 30px; display: inline-block; }
+  .install pre { color: var(--border); font-size: 14px; line-height: 20px; }
+  .install .cmd { color: var(--fg); }
+  .install .prompt { color: var(--accent); }
+  .install .cm { color: var(--fg-dim); }
+
+  .cta { margin-top: 22px; display: flex; gap: 2ch; align-items: baseline; }
+  .btn { background: var(--accent); color: var(--ctp-base); padding: 2px 2ch; text-decoration: none; }
+  .btn-ghost { color: var(--fg-muted); text-decoration: none; padding: 2px 2ch; }
+  .btn-ghost .accent { color: var(--accent); }
+
+  /* divider rule */
+  .rule { color: var(--fg-disabled); overflow: hidden; white-space: nowrap; margin: 40px 0; }
+
+  /* code → preview split */
+  .split { display: flex; gap: 28px; align-items: stretch; flex-wrap: wrap; }
+  .split > div { flex: 1 1 360px; min-width: 0; }
+  .winhead { color: var(--border); white-space: pre; }
+  .winhead .ttl { color: var(--fg-muted); }
+  .winbody { padding: 10px 2ch; }
+  .winfoot { color: var(--border); white-space: pre; }
+  .code .winbody { background: var(--bg-elevated); }
+  .kw { color: var(--ctp-mauve); }
+  .str { color: var(--ctp-green); }
+  .fn { color: var(--ctp-blue); }
+  .cmt { color: var(--fg-disabled); }
+  .tagk { color: var(--ctp-peach); }
+
+  /* preview pane content */
+  .prevwin .winbody { background: var(--bg); }
+  .prow { display: flex; gap: 1ch; white-space: pre; }
+  .prow .arr { color: var(--accent); width: 1ch; }
+  .prow.f { background: var(--bg-focused); margin: 0 -2ch; padding: 0 2ch; }
+
+  /* features */
+  .feat-h { color: var(--fg-faint); font-size: 13px; margin-bottom: 16px; }
+  .feats { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 40px; }
+  .feat { display: flex; gap: 2ch; align-items: baseline; }
+  .feat .g { font-size: 18px; flex-shrink: 0; width: 2ch; }
+  .feat h3 { margin: 0; font-size: 15px; font-weight: 400; color: var(--fg); background: none; padding: 0; }
+  .feat p { margin: 2px 0 0; color: var(--fg-dim); font-size: 14px; line-height: 21px; }
+
+  /* footer */
+  footer { color: var(--fg-faint); font-size: 13px; padding: 30px 0 50px; }
+  footer .wrap { display: flex; justify-content: space-between; align-items: baseline; }
+  footer a { color: var(--fg-muted); text-decoration: none; }
+
+  @media (max-width: 620px) {
+    .hero h1 { font-size: 44px; line-height: 50px; }
+    .feats { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <span class="brand">▎ bl<span class="accent blink">▎</span>nk</span>
+    <span class="links">
+      <a href="#" class="active">docs</a>
+      <a href="#">examples</a>
+      <a href="#">api</a>
+      <a href="#"><span class="accent"></span> github</a>
+    </span>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- hero -->
+  <section class="hero">
+    <h1>bl<span class="accent blink">▎</span>nk</h1>
+    <p class="tag">a framework for building modern, elegant terminal apps.</p>
+    <p class="sub">flexbox layout · box-drawing borders · keyboard-first · zero CSS.</p>
+
+    <div class="install">
+<pre>┌─────────────────────────────────────────────┐
+│  <span class="prompt">$</span> <span class="cmd">npm i blink</span>                                <span class="cm"># or: bun add blink</span>  │
+└─────────────────────────────────────────────┘</pre>
+    </div>
+
+    <div class="cta">
+      <a class="btn" href="#">get started →</a>
+      <a class="btn-ghost" href="#"><span class="accent">▸</span> read the docs</a>
+    </div>
+  </section>
+
+  <div class="rule">────────────────────────────────────────────────────────────────────────────────────────────</div>
+
+  <!-- code → preview -->
+  <section>
+    <div class="feat-h">write a layout tree. blink renders it to the terminal, cell-perfect.</div>
+    <div class="split">
+      <div class="code">
+        <pre class="winhead">┌─ app.jsx ──────────────────────────┐</pre>
+        <div class="winbody">
+<pre><span class="kw">import</span> { App, Pane, List } <span class="kw">from</span> <span class="str">"blink"</span>
+
+<span class="kw">export default</span> <span class="fn">function</span> Services() {
+  <span class="kw">return</span> (
+    &lt;<span class="tagk">App</span>&gt;
+      &lt;<span class="tagk">Pane</span> title=<span class="str">"services"</span> focus&gt;
+        &lt;<span class="tagk">List</span> items={svcs} /&gt;
+      &lt;/<span class="tagk">Pane</span>&gt;
+    &lt;/<span class="tagk">App</span>&gt;
+  )
+}</pre>
+        </div>
+        <pre class="winfoot">└────────────────────────────────────┘</pre>
+      </div>
+
+      <div class="prevwin">
+        <pre class="winhead">╭─<span class="ttl"> services </span>─────────────────────╮</pre>
+        <div class="winbody">
+          <div class="prow"><span class="arr"> </span><span class="ok">✓</span> postgres@14.10</div>
+          <div class="prow f"><span class="arr">▶</span><span class="ok">✓</span> redis@7.2</div>
+          <div class="prow"><span class="arr"> </span><span class="info">◯</span> docker <span class="dim">· 28 up</span></div>
+          <div class="prow"><span class="arr"> </span><span class="warn">◐</span> nginx <span class="dim">· drift</span></div>
+        </div>
+        <pre class="winfoot">╰──────────────────────────────────╯</pre>
+      </div>
+    </div>
+  </section>
+
+  <div class="rule">────────────────────────────────────────────────────────────────────────────────────────────</div>
+
+  <!-- features -->
+  <section>
+    <div class="feat-h">what you get</div>
+    <div class="feats">
+      <div class="feat">
+        <span class="g accent">▦</span>
+        <div><h3>cell-perfect layout</h3>
+          <p>flexbox in the terminal. nest panes, blink aligns every glyph to the character grid — no off-by-one.</p></div>
+      </div>
+      <div class="feat">
+        <span class="g accent">│</span>
+        <div><h3>borders are glyphs</h3>
+          <p>box-drawing characters, not CSS. single, rounded, or double lines — focus is a border recolour.</p></div>
+      </div>
+      <div class="feat">
+        <span class="g accent">↵</span>
+        <div><h3>keyboard-first</h3>
+          <p>arrows, tab, hotkeys. focus is a ▶ caret or inverse fill. no mouse assumptions, no hover state.</p></div>
+      </div>
+      <div class="feat">
+        <span class="g accent"></span>
+        <div><h3>nerd-font glyphs</h3>
+          <p>a curated state + domain glyph set ships in. status reads as ✓ ✗ ◯ ◐ — never emoji, never SVG.</p></div>
+      </div>
+      <div class="feat">
+        <span class="g info">↻</span>
+        <div><h3>calm by default</h3>
+          <p>no transitions, no blur, no shadow. the only motion is the cursor blink and a braille spinner.</p></div>
+      </div>
+      <div class="feat">
+        <span class="g accent"></span>
+        <div><h3>themeable</h3>
+          <p>ships with Catppuccin Mocha. swap the palette token set and every component re-skins instantly.</p></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="rule" style="margin-bottom:0"></div>
+<footer>
+  <div class="wrap">
+    <span>▎ blink · v0.4.0 · MIT</span>
+    <span><a href="#">docs</a>  ·  <a href="#">github</a>  ·  <a href="#">changelog</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

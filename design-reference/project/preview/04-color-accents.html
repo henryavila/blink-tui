@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — Accents</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .chip {
+    padding: 8px 6px;
+    text-align: left;
+    color: var(--ctp-base);
+    font-size: 11px;
+    line-height: 1.25;
+    min-height: 56px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .chip .n { font-size: 12px; }
+  .chip .h { opacity: 0.65; }
+  .star { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="cap">accent palette · <span class="star">★ lavender</span> is the primary brand accent · others used semantically</div>
+
+  <div class="grid">
+    <div class="chip" style="background:var(--ctp-rosewater)"><div class="n">rosewater</div><div class="h">#f5e0dc</div></div>
+    <div class="chip" style="background:var(--ctp-flamingo)"><div class="n">flamingo</div><div class="h">#f2cdcd</div></div>
+    <div class="chip" style="background:var(--ctp-pink)"><div class="n">pink</div><div class="h">#f5c2e7</div></div>
+    <div class="chip" style="background:var(--ctp-mauve)"><div class="n">mauve</div><div class="h">#cba6f7</div></div>
+    <div class="chip" style="background:var(--ctp-red)"><div class="n">red</div><div class="h">#f38ba8</div></div>
+    <div class="chip" style="background:var(--ctp-maroon)"><div class="n">maroon</div><div class="h">#eba0ac</div></div>
+    <div class="chip" style="background:var(--ctp-peach)"><div class="n">peach</div><div class="h">#fab387</div></div>
+
+    <div class="chip" style="background:var(--ctp-yellow)"><div class="n">yellow</div><div class="h">#f9e2af</div></div>
+    <div class="chip" style="background:var(--ctp-green)"><div class="n">green</div><div class="h">#a6e3a1</div></div>
+    <div class="chip" style="background:var(--ctp-teal)"><div class="n">teal</div><div class="h">#94e2d5</div></div>
+    <div class="chip" style="background:var(--ctp-sky)"><div class="n">sky</div><div class="h">#89dceb</div></div>
+    <div class="chip" style="background:var(--ctp-sapphire)"><div class="n">sapphire</div><div class="h">#74c7ec</div></div>
+    <div class="chip" style="background:var(--ctp-blue)"><div class="n">blue</div><div class="h">#89b4fa</div></div>
+    <div class="chip" style="background:var(--ctp-lavender)"><div class="n">★ lavender</div><div class="h">#b4befe</div></div>
+  </div>
+
+  <div class="cap">applied only to <b style="color:var(--fg)">glyphs</b> and inverse-video bars — never to body text</div>
+</div>
+</body>
+</html>

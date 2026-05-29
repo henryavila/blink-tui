@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — Brand mark</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .card { gap: 14px; justify-content: center; }
+  .lockup { font-size: 40px; line-height: 44px; color: var(--fg); white-space: pre; }
+  .lockup .accent { color: var(--accent); }
+  .blink { animation: bk 1s step-end infinite; }
+  @keyframes bk { 50% { opacity: 0; } }
+  .tagline { color: var(--fg-dim); font-size: 13px; }
+  .forms { display: flex; gap: 4ch; align-items: center; white-space: pre; }
+  .tag { display: inline-block; padding: 0 1ch; background: var(--accent); color: var(--ctp-base); }
+  .caption { color: var(--fg-faint); font-size: 11px; }
+  .col { display: flex; flex-direction: column; gap: 3px; }
+  .fav { color: var(--border); font-size: 12px; line-height: 13px; white-space: pre; }
+  .fav .m { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="lockup">bl<span class="accent blink">▎</span>nk</div>
+  <div class="tagline">a framework for building elegant TUI apps</div>
+
+  <div class="forms">
+    <div class="col">
+      <span class="tag">▎ blink</span>
+      <span class="caption">short form · window-title prefix</span>
+    </div>
+    <div class="col">
+      <span class="lockup" style="font-size:20px;line-height:22px">blink<span class="accent blink">█</span></span>
+      <span class="caption">alt lockup · trailing cursor</span>
+    </div>
+    <div class="col">
+      <span class="fav">┌─┐
+│<span class="m blink">▎</span>│
+└─┘</span>
+      <span class="caption">favicon · 1 cell</span>
+    </div>
+  </div>
+
+  <div class="caption">always lowercase · the block is the only animated element (1 Hz, step-end) · accent = <code>--ctp-lavender</code></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — Borders</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .card { gap: 8px; }
+  .row { display: flex; gap: 4ch; align-items: flex-start; }
+  pre { margin: 0; line-height: 1.1; white-space: pre; color: var(--border); }
+  .lbl { color: var(--fg-dim); font-size: 11px; margin-top: 4px; }
+  .focus { color: var(--border-focus); }
+  .col { display: flex; flex-direction: column; gap: 2px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="cap">all borders are glyphs · never CSS · use double-line for focused or modal</div>
+  <div class="row">
+    <div class="col">
+<pre>┌─────────────┐
+│ default     │
+│ pane        │
+└─────────────┘</pre>
+      <div class="lbl">single · ┌─┐│└┘</div>
+    </div>
+    <div class="col">
+<pre class="focus">╭─────────────╮
+│ focused     │
+│ pane        │
+╰─────────────╯</pre>
+      <div class="lbl">rounded · ╭─╮│╰╯</div>
+    </div>
+    <div class="col">
+<pre>╔═════════════╗
+║ modal /     ║
+║ emphasis    ║
+╚═════════════╝</pre>
+      <div class="lbl">double · ╔═╗║╚╝</div>
+    </div>
+    <div class="col">
+<pre>┌──────┬──────┐
+│ left │ right│
+├──────┼──────┤
+│ a    │ b    │
+└──────┴──────┘</pre>
+      <div class="lbl">tees · ├ ┤ ┬ ┴ ┼</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — States</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .rows { display: flex; flex-direction: column; gap: 2px; }
+  .r {
+    display: grid;
+    grid-template-columns: 3ch 14ch 16ch 1fr;
+    column-gap: 2ch;
+    align-items: baseline;
+    white-space: pre;
+  }
+  .r .g { font-size: 16px; }
+  .r .tok { color: var(--fg-dim); font-size: 12px; }
+  .r .ex { color: var(--fg-muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="cap">state glyphs · colour is carried by the glyph, never by body text</div>
+
+  <div class="rows">
+    <div class="r"><span class="g fg-ok">✓</span><span>check / done</span><span class="tok">--state-ok</span><span class="ex"><span class="fg-ok">✓</span> connected  postgres@14.10</span></div>
+    <div class="r"><span class="g fg-err">✗</span><span>cross / missing</span><span class="tok">--state-err</span><span class="ex"><span class="fg-err">✗</span> port 5432 in use</span></div>
+    <div class="r"><span class="g fg-pending">◯</span><span>pending</span><span class="tok">--state-pending</span><span class="ex"><span class="fg-pending">◯</span> waiting on docker</span></div>
+    <div class="r"><span class="g fg-drift">◐</span><span>drift / partial</span><span class="tok">--state-drift</span><span class="ex"><span class="fg-drift">◐</span> 3/12 in sync</span></div>
+    <div class="r"><span class="g fg-warn">⚠</span><span>warning</span><span class="tok">--state-warn</span><span class="ex"><span class="fg-warn">⚠</span> ssh key expires in 4d</span></div>
+    <div class="r"><span class="g fg-info">↻</span><span>rerun / refresh</span><span class="tok">--state-info</span><span class="ex"><span class="fg-info">↻</span> syncing 3/12</span></div>
+    <div class="r"><span class="g fg-accent">☑</span><span>checkbox · on</span><span class="tok">--accent</span><span class="ex"><span class="fg-accent">☑</span> autostart on boot</span></div>
+    <div class="r"><span class="g fg-dim">☐</span><span>checkbox · off</span><span class="tok">--fg-dim</span><span class="ex"><span class="fg-dim">☐</span> verbose logs</span></div>
+  </div>
+</div>
+</body>
+</html>

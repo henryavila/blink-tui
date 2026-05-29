@@ -1,0 +1,235 @@
+/* =========================================================================
+   blink — Colors & Type
+   Catppuccin Mocha palette + CaskaydiaMono Nerd Font
+   ========================================================================= */
+
+@font-face {
+  font-family: "CaskaydiaMono Nerd Font";
+  src: url("fonts/CaskaydiaMonoNerdFontMono-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  /* -----------------------------------------------------------------------
+     CATPPUCCIN MOCHA — base palette
+     ----------------------------------------------------------------------- */
+
+  /* Surfaces (darkest → lightest) */
+  --ctp-crust:     #11111b;
+  --ctp-mantle:    #181825;
+  --ctp-base:      #1e1e2e;  /* canonical background */
+  --ctp-surface0:  #313244;
+  --ctp-surface1:  #45475a;
+  --ctp-surface2:  #585b70;
+
+  /* Overlays (mid greys) */
+  --ctp-overlay0:  #6c7086;
+  --ctp-overlay1:  #7f849c;
+  --ctp-overlay2:  #9399b2;
+
+  /* Text (dimmest → brightest) */
+  --ctp-subtext0:  #a6adc8;
+  --ctp-subtext1:  #bac2de;
+  --ctp-text:      #cdd6f4;  /* default foreground */
+
+  /* Accents */
+  --ctp-rosewater: #f5e0dc;
+  --ctp-flamingo:  #f2cdcd;
+  --ctp-pink:      #f5c2e7;
+  --ctp-mauve:     #cba6f7;
+  --ctp-red:       #f38ba8;
+  --ctp-maroon:    #eba0ac;
+  --ctp-peach:     #fab387;
+  --ctp-yellow:    #f9e2af;
+  --ctp-green:     #a6e3a1;
+  --ctp-teal:      #94e2d5;
+  --ctp-sky:       #89dceb;
+  --ctp-sapphire:  #74c7ec;
+  --ctp-blue:      #89b4fa;
+  --ctp-lavender:  #b4befe;
+
+  /* -----------------------------------------------------------------------
+     SEMANTIC TOKENS — use these in components, not the raw palette
+     ----------------------------------------------------------------------- */
+
+  /* Backgrounds */
+  --bg:            var(--ctp-base);       /* app background */
+  --bg-elevated:   var(--ctp-mantle);     /* panels above bg */
+  --bg-sunken:     var(--ctp-crust);      /* status bars, gutters */
+  --bg-panel:      var(--ctp-base);       /* default pane interior */
+  --bg-selected:   var(--ctp-surface0);   /* row selection fill */
+  --bg-focused:    var(--ctp-surface1);   /* focused row fill */
+  --bg-inverse:    var(--ctp-text);       /* inverse video for active hotkeys */
+
+  /* Foregrounds */
+  --fg:            var(--ctp-text);       /* default text */
+  --fg-muted:      var(--ctp-subtext1);   /* secondary text */
+  --fg-dim:        var(--ctp-subtext0);   /* tertiary, hints */
+  --fg-faint:      var(--ctp-overlay1);   /* labels, captions */
+  --fg-disabled:   var(--ctp-overlay0);   /* disabled items, separators */
+  --fg-inverse:    var(--ctp-base);       /* text on --bg-inverse */
+
+  /* Borders (always rendered as glyphs — these color the glyphs themselves) */
+  --border:        var(--ctp-surface1);   /* default pane border */
+  --border-focus:  var(--ctp-lavender);   /* border of focused pane */
+  --border-strong: var(--ctp-overlay0);   /* emphasised dividers */
+
+  /* Accents (mapped to roles, not raw colours) */
+  --accent:        var(--ctp-lavender);   /* primary, focus, brand */
+  --accent-alt:    var(--ctp-mauve);      /* secondary brand */
+  --link:          var(--ctp-blue);       /* link / refs */
+  --highlight:     var(--ctp-yellow);     /* search match, hotkey */
+
+  /* States (semantic colour for status glyphs ✓ ✗ ◯ ⚠) */
+  --state-ok:      var(--ctp-green);      /* ✓  installed/done */
+  --state-err:     var(--ctp-red);        /* ✗  missing/failed */
+  --state-warn:    var(--ctp-yellow);     /* ⚠  warning */
+  --state-pending: var(--ctp-overlay1);   /* ◯  pending */
+  --state-drift:   var(--ctp-peach);      /* ◐  drift */
+  --state-info:    var(--ctp-sky);        /* ↻  info/rerun */
+
+  /* -----------------------------------------------------------------------
+     TYPOGRAPHY
+     One family. One size. Variation comes from colour + weight + glyph.
+     ----------------------------------------------------------------------- */
+
+  --font-mono: "CaskaydiaMono Nerd Font",
+               "Cascadia Code", "Cascadia Mono",
+               "JetBrains Mono", "Fira Code",
+               "SF Mono", "Menlo", "Consolas",
+               ui-monospace, monospace;
+
+  --font-family: var(--font-mono);
+
+  /* Character cell. We design on a fixed cell grid: 8.4px × 18px @ 14px font.
+     Most cells render at integer pixel widths in modern browsers. */
+  --cell-w: 8.4px;
+  --cell-h: 18px;
+
+  /* Type scale — TUIs use ONE size. The scale is for HTML mocks of docs. */
+  --fs-xs:   12px;   /* footnote, dim status */
+  --fs-sm:   13px;   /* mobile-mosh / 60×20 fallback */
+  --fs-base: 14px;   /* canonical TUI body */
+  --fs-md:   16px;   /* zoomed reading */
+  --fs-lg:   20px;   /* big banner ASCII */
+  --fs-xl:   28px;   /* splash / logo */
+
+  --lh-tight: 1.0;       /* code grid */
+  --lh-base:  1.286;     /* 18px / 14px — body in HTML */
+  --lh-loose: 1.5;       /* prose docs */
+
+  /* Weights — we ship one weight (400). Bold is via inverse video, not 700. */
+  --fw-normal: 400;
+
+  /* Letter / word spacing — must be zero on the grid. */
+  --tracking: 0;
+
+  /* -----------------------------------------------------------------------
+     LAYOUT TOKENS
+     "Spacing" is measured in cells. There is no half-cell.
+     ----------------------------------------------------------------------- */
+
+  --gap-0: 0;
+  --gap-1: var(--cell-w);          /* 1ch */
+  --gap-2: calc(var(--cell-w) * 2);
+  --gap-3: calc(var(--cell-w) * 3);
+  --gap-4: calc(var(--cell-w) * 4);
+
+  --pad-row: 0 var(--cell-w);      /* canonical row padding: 1 cell L/R */
+
+  /* Target window dimensions */
+  --cols-full:   100;
+  --rows-full:   30;
+  --cols-mobile: 60;
+  --rows-mobile: 20;
+}
+
+/* =========================================================================
+   ELEMENT DEFAULTS — applied wherever colors_and_type.css is loaded
+   ========================================================================= */
+
+html, body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-family);
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  letter-spacing: var(--tracking);
+  font-feature-settings: "liga" 0, "calt" 0;  /* no ligatures — grid integrity */
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+}
+
+/* Body / paragraph */
+p, .p {
+  color: var(--fg);
+  margin: 0 0 var(--cell-h) 0;
+}
+
+/* Headings — in a TUI these are inverse-video bars or box-titles, not bigger text */
+h1, .h1 {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-normal);
+  color: var(--fg-inverse);
+  background: var(--bg-inverse);
+  padding: 0 var(--cell-w);
+  margin: 0;
+}
+h2, .h2 {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-normal);
+  color: var(--accent);
+  margin: 0;
+}
+h3, .h3 {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-normal);
+  color: var(--fg-muted);
+  margin: 0;
+}
+
+/* Inline elements */
+code, .code, kbd, samp, pre {
+  font-family: var(--font-mono);
+  font-size: inherit;
+  color: var(--fg);
+  background: transparent;
+}
+kbd, .kbd {
+  color: var(--fg-inverse);
+  background: var(--bg-inverse);
+  padding: 0 var(--cell-w);
+  border-radius: 0;          /* no rounding, ever */
+}
+a, .link {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Muted/dim utility classes (use everywhere) */
+.fg          { color: var(--fg); }
+.fg-muted    { color: var(--fg-muted); }
+.fg-dim      { color: var(--fg-dim); }
+.fg-faint    { color: var(--fg-faint); }
+.fg-disabled { color: var(--fg-disabled); }
+.fg-accent   { color: var(--accent); }
+.fg-link     { color: var(--link); }
+.fg-ok       { color: var(--state-ok); }
+.fg-err      { color: var(--state-err); }
+.fg-warn     { color: var(--state-warn); }
+.fg-pending  { color: var(--state-pending); }
+.fg-drift    { color: var(--state-drift); }
+.fg-info     { color: var(--state-info); }
+
+/* Inverse video (the TUI "bold"/selected/active treatment) */
+.inverse {
+  color: var(--fg-inverse);
+  background: var(--bg-inverse);
+}
+.inverse-accent {
+  color: var(--ctp-base);
+  background: var(--accent);
+}

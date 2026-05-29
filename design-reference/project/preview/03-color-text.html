@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — Text tiers</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .row-spec { display: flex; gap: 2ch; align-items: baseline; }
+  .row-spec .lbl { width: 14ch; color: var(--fg-faint); font-size: 12px; }
+  .row-spec .val { font-size: 14px; }
+  .meta { color: var(--fg-faint); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="cap">three foreground tiers · never invent a fourth grey</div>
+
+  <div class="row-spec">
+    <div class="lbl">--fg</div>
+    <div class="val" style="color:var(--fg)">text · default body · #cdd6f4</div>
+  </div>
+  <div class="row-spec">
+    <div class="lbl">--fg-muted</div>
+    <div class="val" style="color:var(--fg-muted)">subtext1 · secondary · #bac2de</div>
+  </div>
+  <div class="row-spec">
+    <div class="lbl">--fg-dim</div>
+    <div class="val" style="color:var(--fg-dim)">subtext0 · tertiary, hints · #a6adc8</div>
+  </div>
+  <div class="row-spec">
+    <div class="lbl">--fg-faint</div>
+    <div class="val" style="color:var(--fg-faint)">overlay1 · captions, labels · #7f849c</div>
+  </div>
+  <div class="row-spec">
+    <div class="lbl">--fg-disabled</div>
+    <div class="val" style="color:var(--fg-disabled)">overlay0 · disabled, separators · #6c7086</div>
+  </div>
+
+  <div class="meta">hierarchy beyond three tiers must use a semantic accent · never a fourth grey</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modern TUI — Name & Mark exploration</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; height: 100%; background: var(--ctp-crust); }
+  .ab {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 14px; line-height: 18px; letter-spacing: 0;
+    font-feature-settings: "liga" 0, "calt" 0;
+    display: flex; flex-direction: column;
+    padding: 22px 24px;
+    gap: 16px;
+    white-space: pre;
+  }
+  .ab .top { display: flex; align-items: flex-start; justify-content: space-between; }
+  .word { font-size: 34px; line-height: 40px; color: var(--fg); }
+  .word .accent { color: var(--accent); }
+  .word .dim { color: var(--fg-dim); }
+  .blink { animation: bk 1s step-end infinite; }
+  @keyframes bk { 50% { opacity: 0; } }
+  .fav { font-size: 13px; line-height: 14px; color: var(--border); }
+  .fav .m { color: var(--accent); }
+  .sub { color: var(--fg-faint); font-size: 12px; }
+  .pron { color: var(--fg-dim); font-size: 12px; }
+  .titlebar {
+    background: var(--bg-inverse); color: var(--fg-inverse);
+    padding: 0 1ch; align-self: flex-start;
+  }
+  .rationale { color: var(--fg-muted); font-size: 13px; white-space: pre-wrap; line-height: 19px; }
+  .tag { color: var(--ctp-base); background: var(--accent); padding: 0 1ch; font-size: 11px; align-self: flex-start; }
+  .spacer { flex: 1; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+
+<script type="text/babel">
+function Concept({ word, fav, pron, titlebar, rationale, recommended }) {
+  return (
+    <div className="ab">
+      <div className="top">
+        <div className="word">{word}</div>
+        <div className="fav">{fav}</div>
+      </div>
+      {pron ? <div className="pron">{pron}</div> : null}
+      <div className="titlebar">{titlebar}</div>
+      <div className="rationale">{rationale}</div>
+      <div className="spacer"></div>
+      {recommended ? <div className="tag">recommended</div> : null}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection id="your-pick" title="your idea · blink" subtitle="the cursor becomes the 'i' — the name IS the motion">
+
+        <DCArtboard id="blink" label="blink" width={440} height={320}>
+          <Concept
+            recommended
+            word={<span>bl<span className="accent blink">▎</span>nk</span>}
+            fav={<span>┌─┐{"\n"}│<span className="m blink">▎</span>│{"\n"}└─┘</span>}
+            pron="/blɪŋk/ · verb · what the cursor does"
+            titlebar={<span>▎ blink</span>}
+            rationale={"the cursor replaces the 'i' (bl▎nk) and blinks at 1 Hz — the\nname performs itself. the only sanctioned motion in the whole\nsystem, made the logo. short, verb-y, friendly.\n\n⚠ collision: 'Blink Shell' is a well-known iOS terminal. worth\na quick search before committing — distinct category, but\nterminal-adjacent."}
+          />
+        </DCArtboard>
+
+        <DCArtboard id="blink-alt" label="blink · steady lockup" width={440} height={320}>
+          <Concept
+            word={<span>blink<span className="accent blink">█</span></span>}
+            fav={<span>╭─╮{"\n"}│<span className="m blink">█</span>│{"\n"}╰─╯</span>}
+            pron="alt · full word + trailing cursor"
+            titlebar={<span>▎ blink · modern tui</span>}
+            rationale={"safer lockup if the bl▎nk wink reads as a typo at small sizes:\nfull word set clean, with the blinking block trailing like a\nlive prompt. the cursor stays the brand element without\nhiding inside the letters."}
+          />
+        </DCArtboard>
+
+      </DCSection>
+
+      <DCSection id="names" title="other directions" subtitle="each shows wordmark, favicon-cell mark, in-app title bar, and rationale">
+
+        <DCArtboard id="caret" label="caret" width={440} height={300}>
+          <Concept
+            word={<span>caret<span className="accent blink">█</span></span>}
+            fav={<span>┌─┐{"\n"}│<span className="m">█</span>│{"\n"}└─┘</span>}
+            pron="/ˈkærɪt/ · noun · the blinking block"
+            titlebar={<span>▎ caret</span>}
+            rationale={"the cursor is every terminal's heartbeat — and it's already\nyour glyph (▎). the mark IS the product: a live block that\nblinks. works as favicon, spinner, and in-app cursor. short,\nlowercase, instantly typeable."}
+          />
+        </DCArtboard>
+
+        <DCArtboard id="lattice" label="lattice" width={440} height={300}>
+          <Concept
+            word={<span><span className="accent">▦</span> lattice</span>}
+            fav={<span>┌┬┐{"\n"}├┼┤{"\n"}└┴┘</span>}
+            pron="/ˈlætɪs/ · noun · the cell grid"
+            titlebar={<span>▎ lattice</span>}
+            rationale={"names what the framework guarantees: a perfect character-\ncell grid. architectural, calm, elegant. the mark is the grid\nitself, drawn in box chars. reads as precision and alignment."}
+          />
+        </DCArtboard>
+
+        <DCArtboard id="rune" label="rune" width={440} height={300}>
+          <Concept
+            word={<span>rune</span>}
+            fav={<span>╭─╮{"\n"}│<span className="m">◆</span>│{"\n"}╰─╯</span>}
+            pron="/ruːn/ · noun · a glyph that means"
+            titlebar={<span>▎ rune</span>}
+            rationale={"every status is a single glyph carrying meaning — a rune.\nleans into the Nerd Font glyph palette as the soul of the\nsystem. slightly mythic, memorable, and distinct from the\ncrowd (charm, ink, textual)."}
+          />
+        </DCArtboard>
+
+        <DCArtboard id="tess" label="tess" width={440} height={300}>
+          <Concept
+            word={<span>tess<span className="dim">era</span></span>}
+            fav={<span><span className="m">▛▜</span>{"\n"}<span className="m">▙▟</span></span>}
+            pron="/ˈtɛsərə/ · noun · one tile of the mosaic"
+            titlebar={<span>▎ tess</span>}
+            rationale={"a tessera is one tile in a mosaic — exactly what a character\ncell is. block glyphs build the picture. shortens to a warm,\nfriendly 'tess'. refined, a little classical, never precious."}
+          />
+        </DCArtboard>
+
+        <DCArtboard id="lumen" label="lumen" width={440} height={300}>
+          <Concept
+            word={<span>lumen<span className="dim"> ░▒▓█</span></span>}
+            fav={<span>┌─┐{"\n"}│<span className="m">▒</span>│{"\n"}└─┘</span>}
+            pron="/ˈluːmən/ · noun · the phosphor glow"
+            titlebar={<span>▎ lumen</span>}
+            rationale={"the soft glow of the screen — light made of characters. the\nmark is a block-shade ramp (░▒▓█), the only 'gradient' the\ncontract allows. elegant and poetic; modern and warm on the\ndark base."}
+          />
+        </DCArtboard>
+
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — Footer</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .card { gap: 10px; }
+  .footer {
+    background: var(--bg-sunken);
+    color: var(--fg-muted);
+    padding: 0 2ch;
+    line-height: 22px;
+    white-space: pre;
+    display: flex;
+    justify-content: space-between;
+    gap: 2ch;
+    overflow: hidden;
+  }
+  .footer .keys { display: flex; gap: 3ch; }
+  .k { color: var(--fg-inverse); background: var(--bg-inverse); padding: 0 1ch; }
+  .desc { color: var(--fg-muted); padding-left: 1ch; }
+  .footer .right { color: var(--fg-faint); }
+  .lbl { color: var(--fg-faint); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="lbl">primary footer · always pinned to bottom row · use hotkey + tight label</div>
+  <div class="footer">
+    <div class="keys">
+      <span><span class="k">tab</span><span class="desc">switch pane</span></span>
+      <span><span class="k">↵</span><span class="desc">open</span></span>
+      <span><span class="k">/</span><span class="desc">search</span></span>
+      <span><span class="k">a</span><span class="desc">apply</span></span>
+      <span><span class="k">?</span><span class="desc">help</span></span>
+      <span><span class="k">q</span><span class="desc">quit</span></span>
+    </div>
+    <div class="right">services · 6 of 8</div>
+  </div>
+
+  <div class="lbl">contextual footer · changes per pane · stays one line</div>
+  <div class="footer">
+    <div class="keys">
+      <span><span class="k">esc</span><span class="desc">close dialog</span></span>
+      <span><span class="k">y</span><span class="desc">confirm</span></span>
+      <span><span class="k">n</span><span class="desc">cancel</span></span>
+    </div>
+    <div class="right" style="color:var(--state-warn)">⚠ unsaved changes</div>
+  </div>
+</div>
+</body>
+</html>

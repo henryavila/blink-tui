@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — Spinner & progress</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .card { gap: 8px; }
+  .row { display: flex; gap: 2ch; align-items: baseline; white-space: pre; }
+  .lbl { color: var(--fg-faint); font-size: 11px; width: 26ch; flex-shrink: 0; }
+  .spin {
+    color: var(--state-info);
+    font-size: 16px;
+    display: inline-block;
+    width: 2ch;
+  }
+  .bar { color: var(--state-info); }
+  .bar-rest { color: var(--ctp-surface1); }
+  .ok { color: var(--state-ok); }
+  .pending { color: var(--state-pending); }
+  .err { color: var(--state-err); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="cap">no transitions allowed · two motion exceptions: cursor blink + spinner cycle</div>
+
+  <div class="row"><div class="lbl">braille spinner · 80ms/frame</div>
+    <span><span class="spin" id="s1">⠋</span> syncing 3/12</span>
+  </div>
+  <div class="row"><div class="lbl">ASCII fallback</div>
+    <span><span class="spin" id="s2">|</span> syncing 3/12</span>
+  </div>
+  <div class="row"><div class="lbl">counter (no spinner)</div>
+    <span><span class="ok">↻</span> applied 7/12</span>
+  </div>
+  <div class="row"><div class="lbl">block progress bar</div>
+    <span>[<span class="bar">████████████</span><span class="bar-rest">░░░░░░░░</span>] 60%</span>
+  </div>
+  <div class="row"><div class="lbl">terminal status line</div>
+    <span><span class="ok">✓</span> 7  <span class="pending">◯</span> 4  <span class="err">✗</span> 1  <span class="fg-dim">· last sync 4s ago</span></span>
+  </div>
+</div>
+
+<script>
+  const braille = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"];
+  const ascii = ["|","/","-","\\"];
+  const s1 = document.getElementById("s1");
+  const s2 = document.getElementById("s2");
+  let i = 0, j = 0;
+  setInterval(() => { s1.textContent = braille[i = (i + 1) % braille.length]; }, 80);
+  setInterval(() => { s2.textContent = ascii[j = (j + 1) % ascii.length]; }, 120);
+</script>
+</body>
+</html>

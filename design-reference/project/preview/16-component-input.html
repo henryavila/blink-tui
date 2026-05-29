@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>blink — Input</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .card { gap: 6px; }
+  .frame { color: var(--border); }
+  .focus { color: var(--border-focus); }
+  pre { margin: 0; line-height: 1.2; white-space: pre; }
+  .cursor {
+    color: var(--fg);
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .placeholder { color: var(--fg-disabled); }
+  .lbl { color: var(--fg-faint); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="lbl">empty · placeholder in --fg-disabled</div>
+<pre><span class="frame">┌─ search ─────────────────────────────────────────────┐
+│  </span><span class="placeholder">type to filter…</span><span class="frame">                                     │
+└──────────────────────────────────────────────────────┘</span></pre>
+
+  <div class="lbl">focused + typing · cursor is ▎ blinking at 1 Hz with step-end timing</div>
+<pre><span class="focus">╭─ search ─────────────────────────────────────────────╮
+│  </span>postgres<span class="cursor">▎</span><span class="focus">                                              │
+╰──────────────────────────────────────────────────────╯</span></pre>
+
+  <div class="lbl">error · double border tinted red · message below field, one line</div>
+<pre><span style="color:var(--state-err)">╔═ ssh key ════════════════════════════════════════════╗
+║  </span>~/.ssh/id_ed25519_old<span class="cursor">▎</span><span style="color:var(--state-err)">                                ║
+╚══════════════════════════════════════════════════════╝</span>
+  <span style="color:var(--state-err)">✗</span> <span class="fg-muted">no such file or directory</span></pre>
+</div>
+</body>
+</html>
