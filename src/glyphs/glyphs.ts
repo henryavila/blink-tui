@@ -37,6 +37,10 @@ export const navGlyphs = {
   depends: { nerd: '↳', unicode: '↳', ascii: '\\>' },
   flow: { nerd: '→', unicode: '→', ascii: '->' },
   back: { nerd: '◀', unicode: '◀', ascii: '<' },
+  // Overflow markers for a windowed List / LogView — "there is more, off-screen".
+  // Distinct from `collapsed`/`expanded` (chevrons): these mean "more rows here".
+  moreAbove: { nerd: '▴', unicode: '▴', ascii: '^' },
+  moreBelow: { nerd: '▾', unicode: '▾', ascii: 'v' },
 } satisfies Record<string, GlyphVariants>;
 
 /**
@@ -156,3 +160,14 @@ export const blocks = {
   light: '░',
   cursor: '▎',
 } as const;
+
+/**
+ * Horizontal eighth-block ramp — the sub-cell material for a determinate
+ * {@link ProgressBar}. Indexed by eighths filled (`0` = empty, `8` = a full
+ * cell `█`). Left-to-right partials, the same family as {@link blocks}, so the
+ * bar stays inside the one sanctioned "gradient".
+ *
+ * The `ascii` icon set has no partials — a bar there fills in whole `#` cells
+ * and drops the fractional eighth (see `ProgressBar`).
+ */
+export const blocksH = [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█'] as const;

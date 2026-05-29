@@ -134,11 +134,17 @@ suggestions; they are what makes blink apps look like blink apps.
 - **Flexbox only.** `<Box flexDirection="row|column">`, nested for multi-pane.
   No absolute positioning, no z-index. Target window 100×30; mobile-mosh
   fallback 60×20 (read `useStdoutDimensions()` to switch layouts).
-- **Keyboard only.** No mouse, no hover, no scroll. Focus is character-based:
-  the `▸` caret, a surface fill, or a recoloured (lavender) border.
+- **Keyboard only.** No *mouse* scroll, no scrollbar, no wheel, no hover. Focus
+  is character-based: the `▸` caret, a surface fill, or a recoloured (lavender)
+  border. A list longer than its container is **paged by the keyboard** — focus
+  moves, the window follows (`List height` / `useListWindow`), with `▴ N more` /
+  `▾ N more` as the only affordance. That is not mouse-scroll; it is how the
+  60×20 target is honoured for any non-trivial list.
 - **One animation.** The cursor blinks at 1 Hz, step-end (`useBlink`). A spinner
-  may cycle (`useSpinnerFrame` + `Spinner`). Nothing else moves — no fades, no
-  transitions, no transforms.
+  may cycle (`useSpinnerFrame` + `Spinner`). Nothing else *moves* — no fades, no
+  transitions, no transforms. Content re-rendering on new data (a windowed list
+  following its focus, a `LogView` following its tail) is **not motion** — it is
+  the same frame redrawn with new content, which the rule does not govern.
 - **No emoji, no SVG, no raster.** Status is carried by glyphs from the palette
   (`✓ ✗ ◯ ◐ ⚠ ↻`). The logo is characters.
 
@@ -178,12 +184,13 @@ is text-shaped fallbacks (`[x]`, `pg`), never broken boxes.
 | `useGlyph()` | `(name) => string`, bound to the icon set in context |
 | `glyph(name, set)` | low-level resolver |
 | `registerGlyphs({...})` | add app-domain glyphs (e.g. your product's logos) |
-| `boxChars`, `spinnerFor`, `blocks` | border sets, spinner frames, block-shade ramp |
+| `boxChars`, `spinnerFor`, `blocks`, `blocksH` | border sets, spinner frames, block-shade ramp, eighth-block ramp (for `ProgressBar`) |
+| `cellWidth(str)` | terminal cell width — the same measure `List`/`Footer` use, so custom rows align exactly |
 
 Built-in names: states `check cross circle half checkboxOn checkboxOff warn
-rerun`; nav `focus collapsed expanded depends flow back`; domains `database
-mysql postgresql redis docker github git ssh nodejs php python vim apple linux
-ubuntu font ai bolt`.
+rerun`; nav `focus collapsed expanded depends flow back moreAbove moreBelow`;
+domains `database mysql postgresql redis docker github git ssh nodejs php python
+vim apple linux ubuntu font ai bolt`.
 
 Override env vars: `BLINK_ICON_SET=nerd|unicode|ascii`, `BLINK_NERD_FONT=1|0`,
 `BLINK_ASCII=1`.
@@ -193,11 +200,14 @@ Override env vars: `BLINK_ICON_SET=nerd|unicode|ascii`, `BLINK_NERD_FONT=1|0`,
 | component | what |
 |---|---|
 | `Pane` | box-drawn rectangle with a title inside the top border; `focused`/`variant` drive weight + colour |
-| `List` / `ListRow` | rows with `▸` focus caret, state + domain glyphs, right-aligned meta, selection fill |
+| `List` / `ListRow` | rows with `▸` focus caret, state + domain glyphs, right-aligned meta, selection fill; set `height` to window a long list |
+| `LogView` | bottom-anchored, height-bounded tail of a growing line stream (subprocess output, build logs); `follow`/`wrap` |
 | `Footer` | the always-visible bottom hotkey bar; inverse-video key chips + a right status slot |
 | `Input` / `Cursor` | single-line field with the blinking `▎` cursor (presentational — wire keys with Ink's `useInput`) |
-| `Dialog` | centred double-border modal; the primary action renders in inverse-accent |
+| `Dialog` | centred double-border modal; plain-text `lines` or a rich `children` body; the primary action renders in inverse-accent |
+| `Banner` | one-line, non-blocking in-flow notice; `tone` (`info`/`warn`/`success`) + optional glyph |
 | `Spinner` | braille spinner (ASCII fallback), driven by `useSpinnerFrame` |
+| `ProgressBar` | determinate bar from the eighth-block ramp; `value` (0..1) + `width` |
 
 ### hooks
 
@@ -206,6 +216,11 @@ Override env vars: `BLINK_ICON_SET=nerd|unicode|ascii`, `BLINK_NERD_FONT=1|0`,
 | `useStdoutDimensions()` | live `{ columns, rows }`, updates on resize — switch 100×30 ↔ 60×20 layouts |
 | `useBlink(active?, hz?)` | the 1 Hz step-end cursor blink |
 | `useSpinnerFrame({active?, intervalMs?})` | a frame counter for spinners (icon-set agnostic) |
+| `useListWindow({rowCount, focusedIndex, height, ...})` | the windowing engine behind `List height` — reusable for any keyboard-paged viewport |
+| `useListNavigation({ids, ...})` | headless focus movement (next/prev/first/last/seek) — you own `useInput`, it owns the cursor |
+| `useListSelection({ids, mode, min?, max?})` | headless single/multi selection with min/max guards; feeds `List selectedIds` |
+
+The three `useList*` hooks are **headless** (the [downshift](https://www.downshift-js.com/)/react-aria pattern): blink owns the *logic*, the app owns the keys (it calls the hooks' intent methods from its own `useInput`). No blink component reads keystrokes — the presentational contract stays intact.
 
 ---
 
@@ -225,11 +240,22 @@ an Agent Skill.
 
 ```bash
 npm install
-npm run build       # tsup → dist/ (ESM + .d.ts)
-npm test            # vitest + ink-testing-library
-npm run typecheck   # tsc --noEmit
-npm run example     # render the svcd reference app in your terminal
+npm run build         # tsup → dist/ (ESM + .d.ts)
+npm test              # vitest + ink-testing-library
+npm run typecheck     # tsc --noEmit
+npm run example       # the demo launcher — pick a screen from the menu
 ```
+
+`npm run example` (`examples/index.tsx`) opens a **launcher**: a menu of demo
+screens you open with ↑↓ + enter, built from blink primitives itself. Two screens
+ship — press `q` inside one to return to the menu:
+
+- **svcd** (`examples/svcd.tsx`) — the narrative reference app, a services
+  manager that reads like a real tool (Pane · List · Footer · Input · Dialog ·
+  Spinner).
+- **gallery** (`examples/gallery.tsx`) — the kitchen sink: every primitive on
+  one screen, driven by the headless `useList*` hooks (windowed List · LogView ·
+  Banner · ProgressBar · selection/navigation/windowing hooks).
 
 ## license
 

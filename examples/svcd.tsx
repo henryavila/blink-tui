@@ -7,11 +7,12 @@
  * the braille spinner. Keyboard only.
  *
  * Run it: `npm run example` (or `npx tsx examples/svcd.tsx`).
- * Keys: ↑↓/j k move · tab switch pane · / search · a apply · d delete · ? help · q reset
+ * Keys: ↑↓/j k move · tab switch pane · / search · a apply · d delete · ? help ·
+ *       r reset · q quit
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { Writable } from 'node:stream';
-import { render, Box, Text, useInput } from 'ink';
+import { render, Box, Text, useApp, useInput } from 'ink';
 import {
   ThemeProvider,
   detectIconSet,
@@ -63,10 +64,20 @@ const STATE_GLYPH: Record<ServiceState, { name: string; tokenKey: 'stateOk' | 's
 
 type DialogKind = null | 'delete' | 'help' | 'error';
 
-function App({ interactive = true }: { interactive?: boolean } = {}): React.ReactElement {
+function App({
+  interactive = true,
+  onExit,
+}: {
+  interactive?: boolean;
+  /** Called on `q`. The launcher passes "return to menu"; standalone falls back to quit. */
+  onExit?: () => void;
+} = {}): React.ReactElement {
   const t = useTokens();
   const g = useGlyph();
   const iconSet = useIconSet();
+  const { exit } = useApp();
+  const leave = onExit ?? exit;
+  const leaveLabel = onExit ? 'menu' : 'quit';
   const { rows } = useStdoutDimensions();
 
   const [services, setServices] = useState<Service[]>(SERVICES);
@@ -141,13 +152,13 @@ function App({ interactive = true }: { interactive?: boolean } = {}): React.Reac
       }
     } else if (input === 'd' && current) setDialog('delete');
     else if (input === '?') setDialog('help');
-    else if (input === 'q') {
-      // reset the demo to its initial state (Ctrl+C exits the app)
+    else if (input === 'r') {
+      // reset the demo to its initial state
       setServices(SERVICES);
       setFocusIdx(2);
       setQuery('');
       setStatus('ready');
-    }
+    } else if (input === 'q') leave(); // back to menu (launcher) or quit (standalone)
   }, { isActive: interactive });
 
   const counts = services.reduce<Record<string, number>>((a, s) => {
@@ -184,7 +195,7 @@ function App({ interactive = true }: { interactive?: boolean } = {}): React.Reac
               { k: 'a', desc: 'apply' },
               { k: 'd', desc: 'delete' },
               { k: '?', desc: 'help' },
-              { k: 'q', desc: 'reset' },
+              { k: 'q', desc: leaveLabel },
             ];
 
   const right = `${g('check')} ${counts.ok ?? 0}  ${g('circle')} ${counts.pending ?? 0}  ${g('half')} ${counts.drift ?? 0}  ${g('cross')} ${counts.err ?? 0}`;
@@ -301,7 +312,7 @@ function DialogLayer({ kind, current }: { kind: DialogKind; current: Service | u
     <Dialog
       title="keys"
       width={48}
-      lines={['↑ ↓ / j k   move focus', 'tab         switch pane', '/  search   a  apply', 'd  delete   q  reset']}
+      lines={['↑ ↓ / j k   move focus', 'tab         switch pane', '/  search   a  apply', 'd  delete   r  reset', '?  help     q  quit']}
       actions={[{ key: '?', label: 'close', primary: true }]}
     />
   );

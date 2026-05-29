@@ -3,6 +3,7 @@ import { Box, Text } from 'ink';
 import { useTokens } from '../theme/context.js';
 import { useGlyph } from '../glyphs/useGlyph.js';
 import { cellWidth } from '../textWidth.js';
+import { useListWindow } from '../hooks/useListWindow.js';
 
 /**
  * One row's worth of data. `glyph` and `domain` are **already-resolved strings**
@@ -50,6 +51,28 @@ export interface ListProps {
   focusedId?: string | null;
   /** Ids drawn with the selection fill. */
   selectedIds?: Set<string>;
+  /**
+   * Max rows to render, including any overflow-marker rows. Omit to render every
+   * row (today's behaviour). When set and `rows` exceeds it, List shows a window
+   * that always contains `focusedId` and scrolls as focus nears an edge —
+   * keyboard-paged, never mouse-scrolled (see the contract).
+   */
+  height?: number;
+  /** Context rows kept before the window scrolls. Default 0 (scroll at the edge). */
+  scrolloff?: number;
+  /** Draw `▴ N more` / `▾ N more` on overflowing sides. Default true. */
+  overflowMarkers?: boolean;
+}
+
+/** The dim `▴ N more` / `▾ N more` chrome row drawn on a clipped side. */
+function OverflowMarker({ glyph, count }: { glyph: string; count: number }): React.ReactElement {
+  const tokens = useTokens();
+  return (
+    <Box flexDirection="row">
+      <Text> </Text>
+      <Text color={tokens.fgDim}>{`${glyph} ${count} more`}</Text>
+    </Box>
+  );
 }
 
 /**
@@ -150,19 +173,42 @@ export function ListRow({
  * all rows and passes those widths down, so every row shares one grid — the fix
  * for ragged columns when glyphs fall back to variable-width text.
  */
-export function List({ rows, focusedId, selectedIds }: ListProps): React.ReactElement {
+export function List({
+  rows,
+  focusedId,
+  selectedIds,
+  height,
+  scrolloff = 0,
+  overflowMarkers = true,
+}: ListProps): React.ReactElement {
   const g = useGlyph();
   const sel = selectedIds ?? new Set<string>();
 
-  // Caret column = the focus glyph's own width (1 for the narrow '▸', 2 for a
-  // wide caret), reserved on every row so the focused row never shifts.
+  // Window the rows when `height` is set. Omitting `height` passes `rows.length`,
+  // which yields the full list with no markers — today's behaviour, unchanged.
+  const focusedIndex = focusedId == null ? -1 : rows.findIndex((r) => r.id === focusedId);
+  const { start, end, aboveCount, belowCount } = useListWindow({
+    rowCount: rows.length,
+    focusedIndex,
+    height: height ?? rows.length,
+    scrolloff,
+    overflowMarkers,
+  });
+  const visible = rows.slice(start, end);
+
+  // Column widths are measured across the FULL row set, not just the window, so
+  // the grid stays put as a wide glyph scrolls in and out of view.
   const caretWidth = Math.max(1, cellWidth(g('focus')));
   const domainWidth = rows.reduce((m, r) => Math.max(m, r.domain ? cellWidth(r.domain) : 0), 0);
   const glyphWidth = rows.reduce((m, r) => Math.max(m, cellWidth(r.glyph ?? ' ')), 1);
 
+  const showAbove = overflowMarkers && aboveCount > 0;
+  const showBelow = overflowMarkers && belowCount > 0;
+
   return (
     <Box flexDirection="column">
-      {rows.map((row) => (
+      {showAbove ? <OverflowMarker glyph={g('moreAbove')} count={aboveCount} /> : null}
+      {visible.map((row) => (
         <ListRow
           key={row.id}
           row={row}
@@ -173,6 +219,7 @@ export function List({ rows, focusedId, selectedIds }: ListProps): React.ReactEl
           glyphWidth={glyphWidth}
         />
       ))}
+      {showBelow ? <OverflowMarker glyph={g('moreBelow')} count={belowCount} /> : null}
     </Box>
   );
 }

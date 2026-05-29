@@ -18,8 +18,10 @@ export interface DialogProps {
   title: string;
   /** `'error'` swaps the lavender double border for a red one. */
   variant?: 'default' | 'error';
-  /** Body rows, one `<Text>` line each. */
+  /** Body rows, one `<Text>` line each — the convenience for plain-text bodies. */
   lines?: string[];
+  /** Rich body (a `List`, glyph rows, a small form). Wins over `lines` when both given. */
+  children?: React.ReactNode;
   /** Footer actions, laid out left-to-right with a 2-cell gap. */
   actions?: DialogAction[];
   /** Fixed dialog width in cells. */
@@ -41,6 +43,7 @@ export function Dialog({
   title,
   variant = 'default',
   lines = [],
+  children,
   actions = [],
   width = 44,
 }: DialogProps): React.ReactElement {
@@ -56,11 +59,13 @@ export function Dialog({
           <Box flexDirection="column" paddingX={1}>
             {/* blank line above the body */}
             <Text> </Text>
-            {lines.map((line, i) => (
-              <Text key={i} color={tokens.fg}>
-                {line}
-              </Text>
-            ))}
+            {/* A rich `children` body wins; otherwise the plain-text `lines`. */}
+            {children ??
+              lines.map((line, i) => (
+                <Text key={i} color={tokens.fg}>
+                  {line}
+                </Text>
+              ))}
             {/* blank line below the body */}
             <Text> </Text>
             <Box flexDirection="row" gap={2}>
