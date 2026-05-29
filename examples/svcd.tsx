@@ -29,16 +29,21 @@ import {
   spinnerFor,
   useIconSet,
   blocks,
-  catppuccinMocha as ctp,
+  registerGlyphs,
+  glyphColor,
+  COMMON_DOMAINS,
   type ListRowData,
 } from '../src/index.js';
+
+// blink core ships no domain glyphs; the reference app opts into the common pack
+// at boot (the colour for each domain row is owned here, at registration).
+registerGlyphs(COMMON_DOMAINS);
 
 type ServiceState = 'ok' | 'err' | 'pending' | 'drift';
 
 interface Service {
   id: string;
-  domain: string; // glyph name
-  domainColor: string;
+  domain: string; // registered glyph name — the framework owns its colour
   name: string;
   state: ServiceState;
   detail: string;
@@ -46,13 +51,13 @@ interface Service {
 }
 
 const SERVICES: Service[] = [
-  { id: 'pg', domain: 'postgresql', domainColor: ctp.blue, name: 'postgres@14.10', state: 'ok', detail: 'data/pg/main', port: 5432 },
-  { id: 'redis', domain: 'redis', domainColor: ctp.red, name: 'redis@7.2', state: 'ok', detail: '/var/redis', port: 6379 },
-  { id: 'docker', domain: 'docker', domainColor: ctp.sky, name: 'docker', state: 'pending', detail: '28 containers · 4 stopped', port: null },
-  { id: 'nginx', domain: 'ubuntu', domainColor: ctp.peach, name: 'nginx', state: 'drift', detail: 'config out-of-date', port: 80 },
-  { id: 'node', domain: 'nodejs', domainColor: ctp.green, name: 'node · api', state: 'ok', detail: 'pid 4821 · :3000', port: 3000 },
-  { id: 'graf', domain: 'database', domainColor: ctp.subtext1, name: 'grafana', state: 'err', detail: 'missing on host', port: 3001 },
-  { id: 'ssh', domain: 'ssh', domainColor: ctp.yellow, name: 'ssh-agent', state: 'ok', detail: '3 keys loaded', port: null },
+  { id: 'pg', domain: 'postgresql', name: 'postgres@14.10', state: 'ok', detail: 'data/pg/main', port: 5432 },
+  { id: 'redis', domain: 'redis', name: 'redis@7.2', state: 'ok', detail: '/var/redis', port: 6379 },
+  { id: 'docker', domain: 'docker', name: 'docker', state: 'pending', detail: '28 containers · 4 stopped', port: null },
+  { id: 'nginx', domain: 'ubuntu', name: 'nginx', state: 'drift', detail: 'config out-of-date', port: 80 },
+  { id: 'node', domain: 'nodejs', name: 'node · api', state: 'ok', detail: 'pid 4821 · :3000', port: 3000 },
+  { id: 'graf', domain: 'database', name: 'grafana', state: 'err', detail: 'missing on host', port: 3001 },
+  { id: 'ssh', domain: 'ssh', name: 'ssh-agent', state: 'ok', detail: '3 keys loaded', port: null },
 ];
 
 const STATE_GLYPH: Record<ServiceState, { name: string; tokenKey: 'stateOk' | 'stateErr' | 'statePending' | 'stateDrift'; word: string }> = {
@@ -167,16 +172,17 @@ function App({
   }, {});
 
   const rowsData: ListRowData[] = filtered.map((s) => {
-    const sg = STATE_GLYPH[s.state];
     const isSyncing = syncing === s.id;
     return {
       id: s.id,
-      // Domain glyphs are Nerd Font icons; their text fallbacks just echo the
-      // service name (`docker`, `redis`), so only show them in nerd mode.
-      domain: iconSet === 'nerd' ? g(s.domain) : undefined,
-      domainColor: s.domainColor,
-      glyph: isSyncing ? spin : g(sg.name),
-      glyphColor: isSyncing ? t.stateInfo : t[sg.tokenKey],
+      // Intent only — the framework draws the state glyph + colour from `state`
+      // and the domain glyph + colour from the registered `domain` name. Domain
+      // glyphs are Nerd Font icons whose text fallbacks just echo the service
+      // name, so only reserve the domain column in nerd mode. While syncing, the
+      // motion lives in the title-bar spinner (a row can't carry an animated
+      // glyph under the intent API); the row just notes "applying…".
+      domain: iconSet === 'nerd' ? s.domain : undefined,
+      state: s.state,
       label: s.name,
       meta: isSyncing ? 'applying…' : s.detail,
     };
@@ -251,7 +257,7 @@ function Detail({ service }: { service: Service }): React.ReactElement {
       <Text>
         {iconSet === 'nerd' ? (
           <>
-            <Text color={service.domainColor}>{g(service.domain)}</Text>
+            <Text color={glyphColor(service.domain) ?? t.fgMuted}>{g(service.domain)}</Text>
             {'  '}
           </>
         ) : null}
@@ -302,7 +308,7 @@ function DialogLayer({ kind, current }: { kind: DialogKind; current: Service | u
     return (
       <Dialog
         title="error"
-        variant="error"
+        tone="error"
         width={52}
         lines={[`${g('cross')} ${current ? current.name : 'service'} is missing on host`, "can't apply a service that isn't installed"]}
         actions={[{ key: 'enter', label: 'dismiss', primary: true }, { key: 'l', label: 'view log' }]}

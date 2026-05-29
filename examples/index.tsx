@@ -29,9 +29,9 @@ import {
   type ListRowData,
 } from '../src/index.js';
 import { App as Svcd } from './svcd.js';
-import { App as Gallery } from './gallery.js';
+import { App as Showcase } from './showcase.js';
 
-type ScreenId = 'svcd' | 'gallery';
+type ScreenId = 'svcd' | 'showcase';
 
 interface Screen {
   id: ScreenId;
@@ -57,18 +57,18 @@ const SCREENS: Screen[] = [
     Component: Svcd,
   },
   {
-    id: 'gallery',
-    name: 'gallery',
+    id: 'showcase',
+    name: 'showcase',
     tagline: 'component catalog · every primitive',
     blurb: [
-      'Every component on one screen, driven by',
-      'the headless useList* hooks.',
+      'Every component on one screen, each region',
+      'labelled with the ‹primitive› it shows —',
+      'all driven by the intent, not style API.',
       '',
-      'Adds: windowed List · LogView · Banner ·',
-      'ProgressBar · useListNavigation ·',
-      'useListSelection · useListWindow.',
+      'Adds: Header · Banner · DescriptionList ·',
+      'Pane tones · Spinner · ProgressBar.',
     ],
-    Component: Gallery,
+    Component: Showcase,
   },
 ];
 
@@ -99,8 +99,6 @@ function Menu({
   const focused = SCREENS.find((s) => s.id === nav.focusedId) ?? SCREENS[0]!;
   const rowsData: ListRowData[] = SCREENS.map((s) => ({
     id: s.id,
-    glyph: g('flow'),
-    glyphColor: t.accent,
     label: s.name,
     meta: s.tagline.split(' · ')[0],
   }));
