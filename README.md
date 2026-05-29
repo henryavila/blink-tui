@@ -7,9 +7,10 @@ bl▎nk
 ```
 
 blink is a thin layer over [Ink](https://github.com/vadimdemedes/ink) (React for
-the terminal) that gives every app the same considered house style: Catppuccin
-Mocha theming, dual-mode Nerd Font glyphs, box-drawing panes, keyboard-only
-interaction — all on a strict character-cell grid.
+the terminal) that gives every app the same considered house style: swappable
+themes (Tokyo Night, Catppuccin, Nord, Gruvbox, Latte …), dual-mode Nerd Font
+glyphs, box-drawing panes, keyboard-only interaction — all on a strict
+character-cell grid.
 
 > _if you can't draw it with characters, it doesn't belong in a blink app._
 
@@ -123,10 +124,14 @@ suggestions; they are what makes blink apps look like blink apps.
 
 - **One family, one size, one weight.** CaskaydiaMono Nerd Font, 14px, 400.
   "Bold" is **inverse video**, not 700.
-- **Catppuccin Mocha, always.** Background is `base` (`#1e1e2e`) — never a
-  gradient, image, or blur. Three text tiers (`fg` / `fgMuted` / `fgDim`); past
-  that, reach for an accent, never a fourth grey. Semantic colour lives on
-  **glyphs**, not body text (green is `✓`, not the word "ok").
+- **Colour is the surface's, never the component's.** Like a real terminal, the
+  scheme belongs to the surface (the `ThemeProvider`); a component emits a
+  semantic role and the surface decides the pixels. Background is always a solid
+  fill — never a gradient, image, or blur. Three text tiers (`fg` / `fgMuted` /
+  `fgDim`); past that, reach for an accent, never a fourth grey. Semantic colour
+  lives on **glyphs**, not body text (green is `✓`, not the word "ok"). blink
+  ships seven themes (default Tokyo Night); switching one repaints the whole tree
+  from the intent tokens, and no component can diverge because it owns no colour.
 - **Every border is a glyph.** Box-drawing characters via `Pane` — never a CSS
   border, radius, or outline (Ink has none anyway; the discipline is in the
   composition). The house style is **single-line, rounded** corners; there is
@@ -203,14 +208,20 @@ the registry's per-entry `color`).
 
 | export | what |
 |---|---|
-| `ThemeProvider` | wrap your app once; takes `theme` (default `mocha`) + `iconSet` |
-| `useTheme()` / `useTokens()` / `useIconSet()` | read theme / semantic tokens / resolved icon set |
-| `mocha`, `catppuccinMocha`, `mochaTokens` | the Catppuccin Mocha theme, raw palette, semantic tokens |
-| `SemanticTokens`, `Theme`, `Palette` | types |
+| `ThemeProvider` | wrap your app once; takes `theme` (id or `Theme`, default `tokyonight`) + `iconSet` |
+| `useTheme()` / `useTokens()` / `useIconSet()` | read active theme / semantic tokens / resolved icon set |
+| `useThemeControls()` | `{ theme, themeId, setTheme, themes }` — what a theme picker drives |
+| `getTheme(id)` / `listThemes()` / `registerTheme({…})` | look up, list, or create a theme at runtime |
+| `palettes`, `buildTokens(palette)` | the raw palettes; build the intent tokens for one |
+| `mocha`, `catppuccinMocha`, `mochaTokens` | the neutral (Catppuccin Mocha) theme, palette, tokens |
+| `SemanticTokens`, `Theme`, `ThemeMeta`, `Palette` | types |
 
-Components consume **semantic tokens** (`tokens.fg`, `tokens.accent`,
-`tokens.stateOk`, …) — never raw hex. Swapping in a light theme later is a
-matter of new tokens, not touched components.
+Seven themes ship — `neutral` (Catppuccin Mocha) · `contrast` · `vivid` ·
+`nord` · `gruvbox` · `tokyonight` (default) · `latte` (light). Components consume
+**semantic tokens** (`tokens.fg`, `tokens.accent`, `tokens.stateOk`,
+`tokens.domainBlue`, …) — never raw hex — so a picker calling
+`useThemeControls().setTheme(id)` repaints the whole app, and `registerTheme()`
+lets an app add its own palette at runtime (inheriting any slots it omits).
 
 ### glyphs (dual-mode)
 
@@ -223,20 +234,23 @@ is text-shaped fallbacks (`[x]`, `pg`), never broken boxes.
 | `detectIconSet(opts?)` | resolve `'nerd' \| 'unicode' \| 'ascii'` (env → user pref → font marker → terminal hints → CI → default) |
 | `useGlyph()` | `(name) => string`, bound to the icon set in context |
 | `glyph(name, set)` | low-level resolver |
-| `registerGlyphs({...})` | register app-domain glyphs (each may carry its own `color`); also takes the `COMMON_DOMAINS` pack |
-| `glyph(name, set)` / `glyphColor(name)` | resolve a registered glyph / its owned colour |
+| `registerGlyphs(...maps)` | register app-domain glyphs — verbose `{nerd,unicode,ascii,color}`, easy `{nf:'dev-laravel'}`, or `{cp:'e73f'}`; takes one or more packs (last wins) |
+| `glyph(name, set)` / `glyphColor(name)` | resolve a registered glyph / its owned colour **token** (resolve via `tokens[…]`) |
 | `stateGlyph(name)` | the intent map: a state name → `{ glyph, token }` (what `List`/`DescriptionList` use) |
-| `COMMON_DOMAINS` | optional convenience pack of dev-tool domain glyphs — opt in with `registerGlyphs(COMMON_DOMAINS)` |
+| `COMMON_DOMAINS` (t1) · `LANGUAGES` `DATABASES` `CLOUD` `EDITORS` `OS` `COMPANIES` `FRAMEWORKS` `FILES` `SOCIAL` `ACTIONS` `PACKAGES` (t2) · `GLYPH_PACKS` | curated packs — opt in with `registerGlyphs(PACK)` |
+| `nf(name)` · `nfHas` · `registerNerdIndex` · `NERD_INDEX` | tier 3 — the raw Nerd Font index (escape hatch); `nf('fa-rocket')` → the char or `''` |
 | `boxChars`, `spinnerFor`, `blocks`, `blocksH` | border sets, spinner frames, block-shade ramp, eighth-block ramp (for `ProgressBar`) |
 | `cellWidth(str)` | terminal cell width — the same measure `List`/`Footer` use, so custom rows align exactly |
 
-**Core vs content.** blink core ships only the *contract* glyphs and seeds the
-registry with them — states (`check cross circle half checkboxOn checkboxOff
-checkboxLock warn rerun`) and nav (`focus collapsed expanded depends flow back
-moreAbove moreBelow`). **Domain glyphs are app content, not core** — blink ships
-none. An app registers its own at boot (`registerGlyphs({ laravel: {...} })`), or
-opts into `COMMON_DOMAINS` (`database mysql postgresql redis docker github git ssh
-nodejs php python vim apple linux ubuntu font ai bolt`). There is **no double-line
+**Four tiers — contract is owned, content is opt-in.** blink core ships only the
+*contract* glyphs (tier 0) and seeds the registry with them — states (`check
+cross circle half checkboxOn checkboxOff checkboxLock warn rerun`) and nav
+(`focus collapsed expanded depends flow back moreAbove moreBelow`), which never
+change. Everything else is **content the app opts into**: tier 1 `COMMON_DOMAINS`
+(the usual dev-tool domains), tier 2 category packs (`LANGUAGES`, `DATABASES`, …
+— take only what you use), and tier 3 `nf()`, the raw Nerd Font index as a
+deliberate escape hatch. A domain glyph's `color` is a **semantic token** (e.g.
+`domainBlue`), so it recolours with the active theme. There is **no double-line
 border** in `boxChars` — the house style is single-line rounded only.
 
 Override env vars: `BLINK_ICON_SET=nerd|unicode|ascii`, `BLINK_NERD_FONT=1|0`,
