@@ -360,6 +360,26 @@ function DialogBox({ children }) {
   return <div style={{ position: "relative", height: "150px", background: "var(--bg)" }}>{children}</div>;
 }
 
+// Form specimen data — exercises all five field kinds.
+const FORM_FIELDS = [
+  { name: "host",     kind: "text",        label: "host",            required: true },
+  { name: "token",    kind: "secret",      label: "api token",       required: true, placeholder: "paste token" },
+  { name: "tls",      kind: "toggle",      label: "enforce tls" },
+  { name: "channel",  kind: "select",      label: "release channel", choices: ["stable", "beta", "edge"] },
+  { name: "versions", kind: "multiselect", label: "php versions",    min: 1, choices: ["8.1", "8.2", "8.3", "8.4"] },
+];
+const FORM_VALUES = { host: "db.internal:5432", token: "s3cr3t-token", tls: true, channel: "stable", versions: ["8.2", "8.3"] };
+
+// ProgressList specimen — one running line, a manual block, and a skip.
+const PROGRESS_ITEMS = [
+  { id: "clone",  domain: "git",        state: "ok",      label: "clone repository",       meta: "1.2s" },
+  { id: "deps",   domain: "nodejs",     state: "ok",      label: "install deps",           meta: "8.4s" },
+  { id: "db",     domain: "postgresql", state: "running", label: "run migrations",         meta: "3/12" },
+  { id: "pair",   domain: "ssh",        state: "waiting", label: "pair device — press ↵",  meta: "blocked" },
+  { id: "build",  domain: "docker",     state: "pending", label: "build image" },
+  { id: "smoke",  domain: "grafana",    state: "skipped", label: "smoke tests",            meta: "skipped" },
+];
+
 function ComponentSection() {
   return (
     <React.Fragment>
@@ -429,6 +449,33 @@ function ComponentSection() {
               lines={[STATE.cross + " grafana — port in use", "another process is bound to this port"]}
               actions={[{ key: " ↵ ", label: "dismiss", primary: true }, { key: "l", label: "view log" }]} />
           </DialogBox>
+        </InvPane>
+      </Section>
+
+      <Section title="COMPONENTS · FORM" sub="labelled fields · five kinds (text · secret · toggle · select · multiselect) · blink owns the glyph, colour, focus fill, required * and ✗ error line · text/secret reuse Input" wide>
+        <InvPane title="fields">
+          <Form fields={FORM_FIELDS} values={FORM_VALUES} focusId="channel::beta" />
+          <div className="inv-cap">focus fill on the active control · * marks required · ☑/☐/▣ from SELECTION · select nav is one stop per choice</div>
+        </InvPane>
+        <InvPane title="validation">
+          <Form fields={FORM_FIELDS}
+            values={{ ...FORM_VALUES, token: "", versions: [] }}
+            focusId="token"
+            errors={{ token: "required", versions: "select at least 1" }} />
+          <div className="inv-cap">empty required field + below-min multiselect refuse to commit · error line is ✗ in --state-err</div>
+        </InvPane>
+      </Section>
+
+      <Section title="COMPONENTS · PROGRESS" sub="ProgressBar · ProgressList · per-line state → glyph or the one sanctioned spinner · windows + follows the active line, like List">
+        <InvPane title="ProgressBar ‹eighth-block›">
+          <div className="inv-line"><ProgressBar value={0.27} width={28} /></div>
+          <div className="inv-line"><ProgressBar value={0.62} width={28} /></div>
+          <div className="inv-line"><ProgressBar value={1} width={28} /></div>
+          <div className="inv-cap">█░ in --accent · the boundary cell is precise to 1/8 of a cell</div>
+        </InvPane>
+        <InvPane title="ProgressList ‹live›">
+          <ProgressList items={PROGRESS_ITEMS} activeId="db" />
+          <div className="inv-cap">◯ pending · ⠋ running (spins) · ✓ ok · ◐ waiting · ◌ skipped · ▴▾ overflow</div>
         </InvPane>
       </Section>
     </React.Fragment>

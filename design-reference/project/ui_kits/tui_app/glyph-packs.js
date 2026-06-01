@@ -181,6 +181,28 @@ const PACKAGES = {
   apt:      { nerd: "\uf306", unicode: "◆", ascii: "ap", color: "var(--domain-red)" },
 };
 
+// devinfra — recurring local dev-infrastructure tools. These showed up often
+// enough as raw nf() registrations in apps to earn CURATED entries (the bar for
+// Tier 2). `laravel` is promoted from FRAMEWORKS and `valet` aliases its glyph;
+// `code-server` aliases the vscode/visualstudio family from EDITORS. The genuine
+// newcomers — tailscale / syncthing / mosh — carry safe {unicode, ascii}
+// fallbacks so they never tofu on a terminal without Nerd Fonts; their `nerd`
+// codepoints are left for a curator to verify (mark: verify).
+//
+// PRIME DIRECTIVE still holds: this pack is OPT-IN content, registered by no
+// app automatically. A one-app-only glyph stays in that app — these are here
+// because they recur, not to make every app carry them.
+const DEVINFRA = {
+  laravel:       { nerd: "\ue73f", unicode: "◆", ascii: "[lv]", color: "var(--domain-red)" },    // promoted from FRAMEWORKS
+  valet:         { nerd: "\ue73f", unicode: "◆", ascii: "[va]", color: "var(--domain-red)" },    // laravel valet (alias glyph)
+  "code-server": { nerd: "\ue70c", unicode: "◆", ascii: "[cs]", color: "var(--domain-blue)" },   // vscode family (EDITORS)
+  ngrok:         { nerd: "\uf0e7", unicode: "⚡", ascii: "[ng]", color: "var(--domain-amber)" },  // fa-bolt
+  mailpit:       { nerd: "\uf0e0", unicode: "✉", ascii: "[mp]", color: "var(--domain-amber)" },  // fa-envelope
+  tailscale:     {                 unicode: "◆", ascii: "[ts]", color: "var(--domain-cyan)" },    // nerd: verify
+  syncthing:     {                 unicode: "↻", ascii: "[st]", color: "var(--domain-violet)" },  // nerd: verify
+  mosh:          {                 unicode: "◆", ascii: "[mo]", color: "var(--domain-amber)" },   // nerd: verify (fa-bolt / custom)
+};
+
 // Pack directory — used by the picker / docs to label & iterate Tier 2.
 const GLYPH_PACKS = {
   languages:  LANGUAGES,
@@ -194,11 +216,12 @@ const GLYPH_PACKS = {
   social:     SOCIAL,
   actions:    ACTIONS,
   packages:   PACKAGES,
+  devinfra:   DEVINFRA,
 };
 
 Object.assign(window, {
   COMMON_DOMAINS,
   LANGUAGES, DATABASES, CLOUD, EDITORS, OS, COMPANIES,
-  FRAMEWORKS, FILES, SOCIAL, ACTIONS, PACKAGES,
+  FRAMEWORKS, FILES, SOCIAL, ACTIONS, PACKAGES, DEVINFRA,
   GLYPH_PACKS,
 });

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.setAttribute("data-theme","tokyonight");</script>
+<title>blink — Form</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  html, body { height: auto; overflow: auto; }
+  .card { height: auto; min-height: 100%; gap: 6px; }
+  .lbl { color: var(--fg-faint); font-size: 11px; margin-top: 6px; }
+  .mount { width: 62ch; max-width: 100%; }
+  /* the only sanctioned text motion — Input's ▎ cursor blinks at 1 Hz */
+  .tui-cursor { animation: tui-blink 1s step-end infinite; }
+  @keyframes tui-blink { 50% { opacity: 0; } }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="cap">intent only — <span class="fg">kind</span> picks the control; blink owns the glyph · colour · focus fill · required <span style="color:var(--state-warn)">*</span> · error line</div>
+
+  <div class="lbl">five kinds + validation · focus on a multiselect choice fills it (--bg-focused) · ✗ required · ✗ min-not-met · "Default version" choices derive from "PHP versions" (optionsFrom)</div>
+  <div id="formA" class="mount"></div>
+
+  <div class="lbl">secret masks to • with a ␣ reveal hint · focused text/secret reuse Input (▎ cursor + lavender border)</div>
+  <div id="formB" class="mount"></div>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../ui_kits/tui_app/glyphs.js"></script>
+<script type="text/babel" src="../ui_kits/tui_app/Pane.jsx"></script>
+<script type="text/babel" src="../ui_kits/tui_app/Input.jsx"></script>
+<script type="text/babel" src="../ui_kits/tui_app/Form.jsx"></script>
+
+<script type="text/babel">
+const FIELDS = [
+  { name: "name",     kind: "text",        label: "Git author name", required: true, placeholder: "your name" },
+  { name: "token",    kind: "secret",      label: "ngrok auth token", placeholder: "paste token" },
+  { name: "editor",   kind: "select",      label: "Default editor",
+    choices: [{ id: "nvim", label: "nvim" }, { id: "code", label: "code" }, { id: "vim", label: "vim" }] },
+  { name: "versions", kind: "multiselect", label: "PHP versions", min: 1,
+    choices: [{ id: "8.2" }, { id: "8.3" }, { id: "8.4" }, { id: "8.5" }] },
+  { name: "default",  kind: "select",      label: "Default version", optionsFrom: "versions" },
+  { name: "composer", kind: "toggle",      label: "Install Composer globally" },
+];
+const VALUES_A = { name: "", token: "wgt0z9Xy7Q", editor: "nvim", versions: [], default: "", composer: true };
+
+ReactDOM.createRoot(document.getElementById("formA")).render(
+  <Pane title="mesh setup" tone="focus" flex="0 0 auto">
+    <Form fields={FIELDS} values={VALUES_A} focusId="versions::8.3" errors={validateForm(FIELDS, VALUES_A).errors} />
+  </Pane>
+);
+
+const FIELDS_B = [
+  { name: "name",  kind: "text",   label: "Git author name", required: true, placeholder: "your name" },
+  { name: "token", kind: "secret", label: "ngrok auth token", placeholder: "paste token" },
+];
+const VALUES_B = { name: "Ada Lovelace", token: "wgt0z9Xy7Q" };
+
+ReactDOM.createRoot(document.getElementById("formB")).render(
+  <Pane title="secret · focused" tone="resting" flex="0 0 auto">
+    <Form fields={FIELDS_B} values={VALUES_B} focusId="token" />
+  </Pane>
+);
+</script>
+</body>
+</html>

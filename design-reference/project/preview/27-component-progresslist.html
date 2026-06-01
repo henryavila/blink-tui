@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.setAttribute("data-theme","tokyonight");</script>
+<title>blink — ProgressList</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  html, body { height: auto; overflow: auto; }
+  .card { height: auto; min-height: 100%; gap: 8px; }
+  .lbl { color: var(--fg-faint); font-size: 11px; margin-top: 6px; }
+  .mount { width: 62ch; max-width: 100%; }
+  .statusline { display: flex; gap: 2ch; align-items: baseline; white-space: pre; }
+  .statusline .k { color: var(--fg); width: 8ch; flex-shrink: 0; }
+  /* the pause prompt is an app Dialog — contain its overlay to this box */
+  #pause { position: relative; height: 150px; width: 62ch; max-width: 100%; background: var(--bg); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="cap">state (intent) → glyph or spinner + colour · the active line is filled · a line may stay <span style="color:var(--state-warn)">◐ waiting</span> or running indefinitely</div>
+
+  <div id="run" class="mount"></div>
+
+  <div class="lbl">manual pause — the <span style="color:var(--state-warn)">◐ waiting</span> line blocks on ↵; the prompt itself is an app <span class="fg">Dialog</span> (composition), not a blink primitive</div>
+  <div id="pause"></div>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../ui_kits/tui_app/glyphs.js"></script>
+<script src="../ui_kits/tui_app/glyph-packs.js"></script>
+<script type="text/babel" src="../ui_kits/tui_app/Pane.jsx"></script>
+<script type="text/babel" src="../ui_kits/tui_app/Dialog.jsx"></script>
+<script type="text/babel" src="../ui_kits/tui_app/ProgressList.jsx"></script>
+
+<script type="text/babel">
+registerGlyphs(DEVINFRA, PACKAGES);   // app opts into curated dev-infra glyphs
+
+const QUEUE = [
+  { id: "laravel",   domain: "laravel",   label: "laravel · install deps",     state: "ok",      meta: "2.1s" },
+  { id: "composer",  domain: "composer",  label: "composer · global install",  state: "ok",      meta: "4.8s" },
+  { id: "ngrok",     domain: "ngrok",     label: "ngrok · auth token",         state: "running", meta: "installing…" },
+  { id: "syncthing", domain: "syncthing", label: "syncthing · pair device",    state: "waiting", meta: "press ↵ to pair" },
+  { id: "tailscale", domain: "tailscale", label: "tailscale · up",             state: "pending", meta: "queued" },
+  { id: "mailpit",   domain: "mailpit",   label: "mailpit · smtp relay",       state: "pending", meta: "queued" },
+  { id: "mosh",      domain: "mosh",      label: "mosh · server",              state: "skipped", meta: "not selected" },
+];
+const okCount = QUEUE.filter((q) => q.state === "ok").length;
+
+function Run() {
+  return (
+    <React.Fragment>
+      <div className="statusline" style={{ marginBottom: "4px" }}>
+        <span className="k">apply</span>
+        <ProgressBar value={okCount / QUEUE.length} width={40} showPercent={false} />
+        <span style={{ color: "var(--fg-dim)" }}>{"  " + okCount + " / " + QUEUE.length + " done"}</span>
+      </div>
+      <Pane title="apply queue" tone="focus" flex="0 0 auto">
+        <ProgressList items={QUEUE} activeId="ngrok" />
+      </Pane>
+    </React.Fragment>
+  );
+}
+ReactDOM.createRoot(document.getElementById("run")).render(<Run />);
+
+ReactDOM.createRoot(document.getElementById("pause")).render(
+  <Dialog title="syncthing — pair device" width={48}
+    lines={["enter this code on the other device", "↳ 7QF2-9KTX — then press ↵ to continue"]}
+    actions={[{ key: " ↵ ", label: "paired", primary: true }, { key: "esc", label: "skip" }]} />
+);
+</script>
+</body>
+</html>

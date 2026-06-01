@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.setAttribute("data-theme","tokyonight");</script>
+<title>blink — ProgressBar</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  .card { gap: 10px; }
+  .lbl { color: var(--fg-faint); font-size: 11px; }
+  #bars { display: flex; flex-direction: column; gap: 4px; }
+  .barrow { display: flex; gap: 2ch; align-items: baseline; white-space: pre; }
+  .barrow .k { color: var(--fg-dim); width: 14ch; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="cap">value <span class="fg">0..1</span> + width → blink draws <span style="color:var(--accent)">█</span><span style="color:var(--border)">░</span> in --accent · eighth-block precision on the boundary cell</div>
+  <div id="bars"></div>
+  <div class="lbl">consumer passes a ratio only (e.g. okCount / total) — the ramp, colour and the partial cell are owned by blink</div>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../ui_kits/tui_app/glyphs.js"></script>
+<script type="text/babel" src="../ui_kits/tui_app/ProgressList.jsx"></script>
+
+<script type="text/babel">
+const W = 48;
+const ROWS = [
+  { k: "empty",       v: 0 },
+  { k: "1/8 cell",    v: 1 / (W * 8) * 6 },     // sub-cell: only the partial block lights
+  { k: "3 / 12",      v: 3 / 12 },
+  { k: "7 / 12",      v: 7 / 12 },
+  { k: "10 / 12",     v: 10 / 12 },
+  { k: "complete",    v: 1 },
+];
+
+function Bars() {
+  return (
+    <React.Fragment>
+      {ROWS.map((r) => (
+        <div className="barrow" key={r.k}>
+          <span className="k">{r.k}</span>
+          <ProgressBar value={r.v} width={W} />
+        </div>
+      ))}
+      <div className="barrow" style={{ marginTop: "8px" }}>
+        <span className="k" style={{ color: "var(--fg)" }}>apply</span>
+        <ProgressBar value={7 / 12} width={W} showPercent={false} />
+        <span style={{ color: "var(--fg-dim)" }}>{"  7/12"}</span>
+      </div>
+    </React.Fragment>
+  );
+}
+ReactDOM.createRoot(document.getElementById("bars")).render(<Bars />);
+</script>
+</body>
+</html>

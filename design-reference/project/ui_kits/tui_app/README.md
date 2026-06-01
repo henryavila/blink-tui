@@ -14,7 +14,7 @@ ui_kits/tui_app/
 ├── index.html             ← interactive demo (100×30 cells)
 ├── theme.js               ← THE THEME OWNER: applies/persists data-theme on the surface; setTheme/onTheme API
 ├── glyphs.js              ← ENGINE: core STATE/NAV/BOX/SPINNER + registry (registerGlyphs/glyph/nf)
-├── glyph-packs.js         ← curated packs · COMMON_DOMAINS (t1) + 11 category packs (t2)
+├── glyph-packs.js         ← curated packs · COMMON_DOMAINS (t1) + 12 category packs (t2)
 ├── glyph-index.js         ← raw Nerd Font name→codepoint index seed (t3, nf() escape hatch + lazy-load)
 ├── glyph-index.full.json  ← generated full index (demo artifact; lazy-loaded on a miss)
 ├── Pane.jsx               ← box-drawn pane with optional title
@@ -22,9 +22,11 @@ ui_kits/tui_app/
 ├── Header.jsx             ← top status bar (mark + title + right slot)
 ├── Banner.jsx             ← one-line in-flow notice (info/success/warn)
 ├── DescriptionList.jsx    ← key/value block for detail panes
-├── Footer.jsx             ← bottom hotkey bar (always visible)
+├── Footer.jsx             ← bottom hotkey bar (always visible; 1-cell margin above by default, marginTop={0} to pin flush)
 ├── Input.jsx              ← single-line text field with ▎ cursor
 ├── Dialog.jsx             ← modal: rounded lavender pane (lines or rich children)
+├── Form.jsx               ← labelled fields + useFormNavigation (text/secret/toggle/select/multiselect)
+├── ProgressList.jsx       ← job runner: ProgressBar (eighth-block) + per-line spinner/state list
 ├── Showcase.jsx           ← small specimen helpers (KV/GlyphBank/BlockBar/KeyChips/BorderSpecimen)
 ├── Inventory.jsx          ← every colour · token · glyph tier/category · component · motion
 └── Component Showcase.html ← the GLOBAL INVENTORY page (renders Inventory.jsx)

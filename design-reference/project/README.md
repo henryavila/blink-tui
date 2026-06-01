@@ -87,6 +87,8 @@ when one exists.
         ├── DescriptionList.jsx ← key/value block for detail panes
         ├── Input.jsx
         ├── Dialog.jsx
+        ├── Form.jsx            ← labelled fields (text/secret/toggle/select/multiselect) + useFormNavigation
+        ├── ProgressList.jsx    ← job runner: ProgressBar (eighth-block) + per-line spinner/state list
         ├── glyphs.js           ← ENGINE: core glyphs + registry + registerGlyphs/glyph/nf
         ├── glyph-packs.js      ← curated packs: COMMON_DOMAINS (t1) + category packs (t2)
         ├── glyph-index.js      ← raw name→codepoint index seed (t3, escape hatch + lazy-load)
@@ -178,6 +180,8 @@ What the consumer is allowed to express:
 | Domain icon        | `domain` = a registered NAME              | the glyph + its colour (owned at registration) |
 | Notice severity    | `tone` = info \| success \| warn          | leading glyph + colour                          |
 | De-emphasis        | `muted` (bool)                            | which grey tier                                 |
+| Field control      | `kind` = text \| secret \| toggle \| select \| multiselect | the control + selection glyph + focus fill + required `*` + error line |
+| Task / step status | `state` = pending \| running \| ok \| failed \| waiting \| skipped | the glyph (or live spinner) + its semantic colour |
 
 Colour, glyph, and shape are **outputs** of intent, never inputs. If you find
 yourself wanting to pass a hex value or a glyph character into a component, the
@@ -393,7 +397,7 @@ deliberate, uncurated escape hatch.
 |------|------|----------|------|------|
 | **0 · contract** | states · nav · box · spinner | full | always on | `glyphs.js` |
 | **1 · common** | `COMMON_DOMAINS` (~18 dev domains) | full | opt-in | `glyph-packs.js` |
-| **2 · category** | `LANGUAGES` `DATABASES` `CLOUD` `EDITORS` `OS` `COMPANIES` `FRAMEWORKS` `FILES` `SOCIAL` `ACTIONS` `PACKAGES` | full | opt-in | `glyph-packs.js` |
+| **2 · category** | `LANGUAGES` `DATABASES` `CLOUD` `EDITORS` `OS` `COMPANIES` `FRAMEWORKS` `FILES` `SOCIAL` `ACTIONS` `PACKAGES` `DEVINFRA` | full | opt-in | `glyph-packs.js` |
 | **3 · raw index** | whole Nerd Font, name→codepoint | none (nerd-only, default colour) | escape hatch | `glyph-index.js` |
 
 Tiers 1–3 are CONTENT: the app opts in. Nothing past Tier 0 is registered

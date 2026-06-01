@@ -17,7 +17,9 @@
     justify-content: space-between;
     gap: 2ch;
     overflow: hidden;
+    margin-top: var(--cell-h);   /* house default: 1 cell of breathing room above */
   }
+  .footer.flush { margin-top: 0; }   /* marginTop={0} — pinned flush */
   .footer .keys { display: flex; gap: 3ch; }
   .k { color: var(--fg-inverse); background: var(--bg-inverse); padding: 0 1ch; }
   .desc { color: var(--fg-muted); padding-left: 1ch; }
@@ -27,7 +29,7 @@
 </head>
 <body>
 <div class="card">
-  <div class="lbl">primary footer · always pinned to bottom row · use hotkey + tight label</div>
+  <div class="lbl">primary footer · always pinned to bottom row · 1-cell margin above (house default)</div>
   <div class="footer">
     <div class="keys">
       <span><span class="k">tab</span><span class="desc">switch pane</span></span>

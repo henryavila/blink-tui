@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.setAttribute("data-theme","tokyonight");</script>
+<title>blink — glyphs · devinfra pack</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="preview.css">
+<style>
+  html, body { height: auto; overflow: auto; }
+  .card { height: auto; min-height: 100%; gap: 8px; }
+  .lbl { color: var(--fg-faint); font-size: 11px; }
+  #grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 16px; margin-top: 4px; }
+  .cell {
+    display: flex; align-items: center; gap: 2ch;
+    background: var(--bg-elevated); padding: 8px 12px; white-space: pre;
+  }
+  .cell .g { font-size: 24px; line-height: 1; width: 1.5em; text-align: center; flex-shrink: 0; }
+  .cell .meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .cell .nm { color: var(--fg); }
+  .cell .fb { color: var(--fg-dim); font-size: 11px; }
+  .cell .note { color: var(--fg-faint); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="cap">Tier 2 · <span class="fg">devinfra</span> — curated, OPT-IN: <span class="fg">registerGlyphs(DEVINFRA)</span> · each entry owns { nerd · unicode · ascii · color }</div>
+  <div id="grid"></div>
+  <div class="lbl">laravel promoted from FRAMEWORKS · valet → laravel · code-server → vscode · tailscale / syncthing / mosh are new (nerd codepoint: verify) — unicode + ascii fallbacks keep them legible with no Nerd Font</div>
+  <div class="lbl">prime directive holds: this pack is opt-in and auto-registered by no app; a one-app glyph still stays in that app</div>
+</div>
+
+<script src="../ui_kits/tui_app/glyphs.js"></script>
+<script src="../ui_kits/tui_app/glyph-packs.js"></script>
+<script>
+  registerGlyphs(DEVINFRA);
+  const NOTES = {
+    laravel:       "promoted",
+    valet:         "alias → laravel",
+    "code-server": "alias → vscode",
+    ngrok:         "nf fa-bolt",
+    mailpit:       "nf fa-envelope",
+    tailscale:     "new · verify",
+    syncthing:     "new · verify",
+    mosh:          "new · verify",
+  };
+  const grid = document.getElementById("grid");
+  Object.keys(DEVINFRA).forEach((name) => {
+    const e = DEVINFRA[name];
+    const family = String(e.color).replace(/var\((--[a-z-]+)\)/i, "$1");
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    const g = document.createElement("span");
+    g.className = "g";
+    g.style.color = e.color;
+    g.textContent = glyph(name);            // active nerd set, falls back as registered
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.innerHTML =
+      '<span class="nm">' + name + '</span>' +
+      '<span class="fb">unicode ' + e.unicode + "  ·  ascii " + e.ascii + "</span>" +
+      '<span class="note">' + (NOTES[name] || "") + "  ·  " + family + "</span>";
+    cell.appendChild(g);
+    cell.appendChild(meta);
+    grid.appendChild(cell);
+  });
+</script>
+</body>
+</html>
