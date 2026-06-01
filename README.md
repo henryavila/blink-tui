@@ -237,7 +237,7 @@ is text-shaped fallbacks (`[x]`, `pg`), never broken boxes.
 | `registerGlyphs(...maps)` | register app-domain glyphs — verbose `{nerd,unicode,ascii,color}`, easy `{nf:'dev-laravel'}`, or `{cp:'e73f'}`; takes one or more packs (last wins) |
 | `glyph(name, set)` / `glyphColor(name)` | resolve a registered glyph / its owned colour **token** (resolve via `tokens[…]`) |
 | `stateGlyph(name)` | the intent map: a state name → `{ glyph, token }` (what `List`/`DescriptionList` use) |
-| `COMMON_DOMAINS` (t1) · `LANGUAGES` `DATABASES` `CLOUD` `EDITORS` `OS` `COMPANIES` `FRAMEWORKS` `FILES` `SOCIAL` `ACTIONS` `PACKAGES` (t2) · `GLYPH_PACKS` | curated packs — opt in with `registerGlyphs(PACK)` |
+| `COMMON_DOMAINS` (t1) · `LANGUAGES` `DATABASES` `CLOUD` `EDITORS` `OS` `COMPANIES` `FRAMEWORKS` `FILES` `SOCIAL` `ACTIONS` `PACKAGES` `DEVINFRA` (t2) · `GLYPH_PACKS` | curated packs — opt in with `registerGlyphs(PACK)` |
 | `nf(name)` · `nfHas` · `registerNerdIndex` · `NERD_INDEX` | tier 3 — the raw Nerd Font index (escape hatch); `nf('fa-rocket')` → the char or `''` |
 | `boxChars`, `spinnerFor`, `blocks`, `blocksH` | border sets, spinner frames, block-shade ramp, eighth-block ramp (for `ProgressBar`) |
 | `cellWidth(str)` | terminal cell width — the same measure `List`/`Footer` use, so custom rows align exactly |
@@ -271,6 +271,8 @@ Override env vars: `BLINK_ICON_SET=nerd|unicode|ascii`, `BLINK_NERD_FONT=1|0`,
 | `Banner` | one-line, non-blocking in-flow notice; `tone` (`info`/`success`/`warn`) — the framework owns the glyph |
 | `Spinner` | braille spinner (ASCII fallback), driven by `useSpinnerFrame` |
 | `ProgressBar` | determinate bar from the eighth-block ramp; `value` (0..1) + `width` |
+| `ProgressList` | job runner: per-line `state` (`pending`/`running`/`ok`/`failed`/`waiting`/`skipped`) → glyph or live spinner + colour; windows + follows the active line like `List` |
+| `Form` / `useFormNavigation` | labelled fields by `kind` (`text`/`secret`/`toggle`/`select`/`multiselect`); blink owns the control glyph, focus fill, required `*`, and error line; the headless hook drives keys (`next`/`prev`/`toggle`/`setText`/`commit`) |
 
 ### hooks
 
@@ -299,6 +301,45 @@ a reference app) lives in [`design-reference/`](./design-reference/), exported
 from [Claude Design](https://claude.ai/design). `SKILL.md` makes it loadable as
 an Agent Skill.
 
+## design-system fidelity
+
+blink is a faithful port of the design system in [`design-reference/`](./design-reference/)
+(the in-repo mirror is byte-identical to the upstream handoff tarball). The DS is
+authored as HTML/JSX mocks; blink renders the same intent through Ink. Verified
+1:1: all 5 base palettes (every hex), the 7 themes and their token maps, every
+Nerd-Font glyph codepoint across the 13 packs and the Tier-3 index, and the
+glyph + colour + layout of every component.
+
+A few places diverge **on purpose** — each is a deliberate adaptation, not drift:
+
+- **Locked single-cell glyph swaps.** The focus caret is `►` (U+25BA) not the
+  DS's `▶`, and `bolt`/`ngrok` use `↯` not `⚡` — the DS glyphs are double-width
+  and would jitter a monospace column by a cell. These two are the *only*
+  Nerd-tier divergences; the unicode fallbacks are width-1 siblings.
+- **`apple` unicode fallback.** The DS leaves `apple.unicode` empty (a fallback
+  hole — non-Nerd unicode terminals would drop to the text label), so blink uses
+  `◇` instead, keeping a glyph on screen. The Nerd-Font glyph (U+F179) is
+  unchanged.
+- **Backgrounds live on `<Text>`, not `<Box>`.** Ink only takes `backgroundColor`
+  on `<Text>`, and a terminal cell holds one glyph with one fg + one bg (no
+  layering). So any filled region — the sunken `Footer` bar, a focused
+  `List`/`ProgressList` row band, the inverse hotkey chip — is painted by making
+  the *gaps and padding themselves* background-carrying spaces, often inside a
+  single `<Text>` with nested `<Text>` overriding the bg. There is no "fill a box,
+  then write text over it"; the fill *is* the text.
+- **`ProgressBar` percent.** Matches the DS default `showPercent` (a `  NN%`
+  readout in `fgDim`); pass `showPercent={false}` when the caller prints its own
+  count, as the showcase does.
+- **Borders.** Single-line rounded corners are house style; the `Pane` bottom
+  edge is drawn by Ink's `borderStyle` rather than hand-composed, but the output
+  is identical to the DS's hand-drawn frame.
+
+Two small items are tracked but intentionally **not** matched, because they cost
+fidelity nothing: the `vivid` selection fills interpolate in OKLab rather than the
+CSS spec's `color-mix(in oklch)` (≤1/255 in one channel, invisible), and the DS's
+unused box tee/cross joints and vertical-block ramp are omitted (no component
+draws them; the `ProgressBar` carries the horizontal eighth-block ramp instead).
+
 ## development
 
 ```bash
@@ -319,7 +360,7 @@ ship — press `q` inside one to return to the menu:
 - **showcase** (`examples/showcase.tsx`) — the kitchen sink: every primitive on
   one screen, each region labelled with the `‹component›` it demonstrates, all
   driven by the intent-not-style API (Header · Banner · DescriptionList · Pane
-  tones · List · Input · Dialog · Spinner · ProgressBar).
+  tones · List · Input · Form · Dialog · Spinner · ProgressBar · ProgressList).
 
 ## license
 
