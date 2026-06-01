@@ -299,6 +299,7 @@ export {
   SOCIAL,
   ACTIONS,
   PACKAGES,
+  DEVINFRA,
   GLYPH_PACKS,
 } from './packs.js';
 export type { CommonDomainName } from './packs.js';

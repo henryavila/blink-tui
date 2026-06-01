@@ -79,6 +79,7 @@ export {
   SOCIAL,
   ACTIONS,
   PACKAGES,
+  DEVINFRA,
   GLYPH_PACKS,
   // Tier 3 raw index (escape hatch)
   nf,
@@ -146,3 +147,18 @@ export { Spinner } from './components/Spinner.js';
 export type { SpinnerProps } from './components/Spinner.js';
 export { ProgressBar } from './components/ProgressBar.js';
 export type { ProgressBarProps } from './components/ProgressBar.js';
+export { ProgressList } from './components/ProgressList.js';
+export type { ProgressListProps, ProgressItem, ProgressState } from './components/ProgressList.js';
+export { Form, useFormNavigation, resolveChoices, buildStops, validateForm } from './components/Form.js';
+export type {
+  FormProps,
+  FieldSpec,
+  FieldKind,
+  FieldValue,
+  FormValues,
+  FormValidation,
+  FormNavigation,
+  FocusStop,
+  ChoiceInput,
+  ResolvedChoice,
+} from './components/Form.js';

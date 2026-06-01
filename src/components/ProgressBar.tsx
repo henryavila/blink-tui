@@ -12,6 +12,8 @@ export interface ProgressBarProps {
   color?: string;
   /** Track (empty rail) colour. Defaults to `tokens.border` (surface1), matching the design system's `bar-rest`. */
   trackColor?: string;
+  /** Append a `  NN%` readout in `fgDim` after the bar. Defaults to `true`, matching the design system. */
+  showPercent?: boolean;
 }
 
 /**
@@ -27,12 +29,13 @@ export interface ProgressBarProps {
  * fractional eighth is dropped) over a blank track, like every other glyph that
  * falls back.
  */
-export function ProgressBar({ value, width, color, trackColor }: ProgressBarProps): React.ReactElement {
+export function ProgressBar({ value, width, color, trackColor, showPercent = true }: ProgressBarProps): React.ReactElement {
   const tokens = useTokens();
   const iconSet = useIconSet();
   const v = Math.max(0, Math.min(1, value));
   const fillColor = color ?? tokens.accent;
   const track = trackColor ?? tokens.border;
+  const pct = showPercent ? <Text color={tokens.fgDim}>{`  ${Math.round(v * 100)}%`}</Text> : null;
 
   if (iconSet === 'ascii') {
     const full = Math.round(v * width);
@@ -40,6 +43,7 @@ export function ProgressBar({ value, width, color, trackColor }: ProgressBarProp
       <Text>
         <Text color={fillColor}>{'#'.repeat(full)}</Text>
         <Text color={track}>{' '.repeat(Math.max(0, width - full))}</Text>
+        {pct}
       </Text>
     );
   }
@@ -55,6 +59,7 @@ export function ProgressBar({ value, width, color, trackColor }: ProgressBarProp
     <Text>
       <Text color={fillColor}>{filled}</Text>
       <Text color={track}>{empty}</Text>
+      {pct}
     </Text>
   );
 }

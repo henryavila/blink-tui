@@ -197,6 +197,37 @@ export const PACKAGES = {
   apt: { nerd: cp('f306'), unicode: '◆', ascii: 'ap', color: 'domainRed' },
 } satisfies Record<string, GlyphVariants>;
 
+/**
+ * devinfra — recurring local dev-infrastructure tools. These show up often
+ * enough as raw `nf()` registrations in apps to earn CURATED entries (the bar
+ * for Tier 2). `laravel` is promoted from {@link FRAMEWORKS} and `valet` aliases
+ * its glyph; `code-server` aliases the vscode family from {@link EDITORS}. The
+ * genuine newcomers — tailscale / syncthing / mosh — carry safe `{ unicode,
+ * ascii }` fallbacks so they never tofu without a Nerd Font; their `nerd`
+ * codepoint is left empty (a curator must verify it) and the glyph degrades to
+ * its unicode form until then.
+ *
+ * PRIME DIRECTIVE still holds: this pack is OPT-IN content, registered by no app
+ * automatically. A one-app-only glyph stays in that app — these are here because
+ * they recur, not to make every app carry them.
+ *
+ * Two single-cell divergences from the design system, for the same reason as
+ * {@link COMMON_DOMAINS} `bolt` (see also `glyphs/glyphs.ts`): the DS unicode
+ * fallbacks `⚡` (ngrok) and `✉` (mailpit) are emoji-presentation and
+ * double-wide — they break the one-glyph-one-cell grid in unicode mode. blink
+ * substitutes the width-1 `↯` and `⊠`; `string-width` is the arbiter.
+ */
+export const DEVINFRA = {
+  laravel: { nerd: cp('e73f'), unicode: '◆', ascii: 'lv', color: 'domainRed' }, // promoted from FRAMEWORKS
+  valet: { nerd: cp('e73f'), unicode: '◆', ascii: 'va', color: 'domainRed' }, // laravel valet (alias glyph)
+  'code-server': { nerd: cp('e70c'), unicode: '◆', ascii: 'cs', color: 'domainBlue' }, // vscode family (EDITORS)
+  ngrok: { nerd: cp('f0e7'), unicode: '↯', ascii: 'ng', color: 'domainAmber' }, // fa-bolt — ↯ over the DS's double-wide ⚡
+  mailpit: { nerd: cp('f0e0'), unicode: '⊠', ascii: 'mp', color: 'domainAmber' }, // fa-envelope — ⊠ over the DS's double-wide ✉
+  tailscale: { nerd: '', unicode: '◆', ascii: 'ts', color: 'domainCyan' }, // nerd: verify → degrades to ◆
+  syncthing: { nerd: '', unicode: '↻', ascii: 'st', color: 'domainViolet' }, // nerd: verify → degrades to ↻
+  mosh: { nerd: '', unicode: '◆', ascii: 'mo', color: 'domainAmber' }, // nerd: verify → degrades to ◆
+} satisfies Record<string, GlyphVariants>;
+
 /** Tier-2 pack directory — used by pickers / docs to label & iterate packs. */
 export const GLYPH_PACKS: Record<string, Record<string, GlyphVariants>> = {
   languages: LANGUAGES,
@@ -210,4 +241,5 @@ export const GLYPH_PACKS: Record<string, Record<string, GlyphVariants>> = {
   social: SOCIAL,
   actions: ACTIONS,
   packages: PACKAGES,
+  devinfra: DEVINFRA,
 };

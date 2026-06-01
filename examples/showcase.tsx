@@ -28,6 +28,9 @@ import {
   Dialog,
   Spinner,
   ProgressBar,
+  ProgressList,
+  Form,
+  validateForm,
   Cursor,
   useTokens,
   useGlyph,
@@ -35,19 +38,26 @@ import {
   useThemeControls,
   registerGlyphs,
   COMMON_DOMAINS,
+  DEVINFRA,
+  PACKAGES,
   GLYPH_PACKS,
   blocks,
   type SemanticTokens,
   type GlyphVariants,
   type ListRowData,
   type DescriptionItem,
+  type FieldSpec,
+  type FormValues,
+  type ProgressItem,
 } from '../src/index.js';
 
 // blink core ships no domain glyphs; the inventory opts into the Tier 1 pack —
 // exactly as a real product would at boot (framework owns the mechanism, the app
-// owns the content). The Tier 2 packs are read straight from GLYPH_PACKS for the
-// category grid below; they're documentation there, so they need no registration.
-registerGlyphs(COMMON_DOMAINS);
+// owns the content). It also takes the Tier 2 devinfra + packages packs, whose
+// domains the Form / ProgressList specimens below reference. The rest of the
+// Tier 2 packs are read straight from GLYPH_PACKS for the category grid; they're
+// documentation there, so they need no registration.
+registerGlyphs(COMMON_DOMAINS, DEVINFRA, PACKAGES);
 
 const CLAMP = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));
 
@@ -436,7 +446,7 @@ function ContractSection(): React.ReactElement {
             <Text color={t.border}>{'╰───────╯  └───────┘'}</Text>
             <Text color={t.fgDim}>{'tees ├ ┤ ┬ ┴ ┼   ' + blocks.full + ' ' + blocks.dark + ' ' + blocks.medium + ' ' + blocks.light}</Text>
             <Box>
-              <ProgressBar value={0.62} width={18} />
+              <ProgressBar value={0.62} width={18} showPercent={false} />
               <Text color={t.fgDim}>{' 62%'}</Text>
             </Box>
           </Pane>
@@ -462,7 +472,9 @@ function PackGrid({ name, pack }: { name: string; pack: Record<string, GlyphVari
           const e = pack[n]!;
           // pack entries store a token key in `color`; resolve through the theme.
           const tok = (e.color ?? 'fgMuted') as keyof SemanticTokens;
-          return <PackCell key={n} char={e.nerd} label={n} color={t[tok]} />;
+          // some entries (e.g. devinfra's verify-pending logos) ship no nerd
+          // codepoint yet — show their unicode fallback so the cell isn't blank.
+          return <PackCell key={n} char={e.nerd || e.unicode} label={n} color={t[tok]} />;
         })}
       </Box>
     </Box>
@@ -589,6 +601,76 @@ function ComponentSection(): React.ReactElement {
   );
 }
 
+// ── COMPONENTS · FORM ─────────────────────────────────────────────────────────
+
+// Five kinds + validation, mirroring the design system's Form preview. The
+// consumer declares `kind`; blink owns every glyph, colour, the focus fill, the
+// required `*`, and the error lines. `default` derives its choices from the
+// marked `versions` (optionsFrom) — empty here, so it reads `—`.
+const FORM_FIELDS: FieldSpec[] = [
+  { name: 'name', kind: 'text', label: 'Git author name', required: true, placeholder: 'your name' },
+  { name: 'token', kind: 'secret', label: 'ngrok auth token', placeholder: 'paste token' },
+  {
+    name: 'editor',
+    kind: 'select',
+    label: 'Default editor',
+    choices: [{ id: 'nvim', label: 'nvim' }, { id: 'code', label: 'code' }, { id: 'vim', label: 'vim' }],
+  },
+  { name: 'versions', kind: 'multiselect', label: 'PHP versions', min: 1, choices: [{ id: '8.2' }, { id: '8.3' }, { id: '8.4' }, { id: '8.5' }] },
+  { name: 'default', kind: 'select', label: 'Default version', optionsFrom: 'versions' },
+  { name: 'composer', kind: 'toggle', label: 'Install Composer globally' },
+];
+const FORM_VALUES: FormValues = { name: '', token: 'wgt0z9Xy7Q', editor: 'nvim', versions: [], default: '', composer: true };
+
+function FormSection(): React.ReactElement {
+  const t = useTokens();
+  const errors = validateForm(FORM_FIELDS, FORM_VALUES).errors;
+  return (
+    <Box flexDirection="column">
+      <SectionTitle title="COMPONENTS · FORM" sub="kind picks the control · blink owns glyph · colour · focus fill · required * · error line" />
+      <Pane title="mesh setup" tone="focus" flexGrow={0}>
+        <Form fields={FORM_FIELDS} values={FORM_VALUES} focusId="versions::8.3" errors={errors} />
+        <Text color={t.fgFaint} wrap="truncate">{'text/secret reuse Input · ☑/☐ choices · focus fills the 8.3 cell · ✗ required · ✗ min-not-met'}</Text>
+      </Pane>
+    </Box>
+  );
+}
+
+// ── COMPONENTS · PROGRESS ───────────────────────────────────────────────────
+
+// A job runner: the aggregate ProgressBar above a ProgressList whose lines bind
+// `state` (intent) → glyph or live spinner + colour. `waiting` (◐) reads apart
+// from `running` so a step blocked on a manual action stays legible.
+const QUEUE: ProgressItem[] = [
+  { id: 'laravel', domain: 'laravel', label: 'laravel · install deps', state: 'ok', meta: '2.1s' },
+  { id: 'composer', domain: 'composer', label: 'composer · global install', state: 'ok', meta: '4.8s' },
+  { id: 'ngrok', domain: 'ngrok', label: 'ngrok · auth token', state: 'running', meta: 'installing…' },
+  { id: 'syncthing', domain: 'syncthing', label: 'syncthing · pair device', state: 'waiting', meta: 'press ↵ to pair' },
+  { id: 'tailscale', domain: 'tailscale', label: 'tailscale · up', state: 'pending', meta: 'queued' },
+  { id: 'mailpit', domain: 'mailpit', label: 'mailpit · smtp relay', state: 'pending', meta: 'queued' },
+  { id: 'mosh', domain: 'mosh', label: 'mosh · server', state: 'skipped', meta: 'not selected' },
+];
+const OK_COUNT = QUEUE.filter((q) => q.state === 'ok').length;
+
+function ProgressSection({ interactive }: { interactive: boolean }): React.ReactElement {
+  const t = useTokens();
+  return (
+    <Box flexDirection="column">
+      <SectionTitle title="COMPONENTS · PROGRESS" sub="ProgressBar (eighth-block) + ProgressList · per-line state → glyph or spinner + colour" />
+      <Pane title="apply queue" tone="focus" flexGrow={0}>
+        <Box>
+          <Box width={8} flexShrink={0}><Text color={t.fg}>apply</Text></Box>
+          <ProgressBar value={OK_COUNT / QUEUE.length} width={40} showPercent={false} />
+          <Text color={t.fgDim}>{`  ${OK_COUNT} / ${QUEUE.length} done`}</Text>
+        </Box>
+        <Text> </Text>
+        <ProgressList items={QUEUE} activeId="ngrok" animate={interactive} />
+        <Text color={t.fgFaint} wrap="truncate">{'✓ ok · ⠿ running · ◐ waiting · ◯ pending · ◌ skipped — the active line is filled'}</Text>
+      </Pane>
+    </Box>
+  );
+}
+
 // ── MOTION ──────────────────────────────────────────────────────────────────
 
 function MotionSection({ interactive }: { interactive: boolean }): React.ReactElement {
@@ -624,7 +706,7 @@ function MotionSection({ interactive }: { interactive: boolean }): React.ReactEl
               <Text color={t.fgDim}>8/13</Text>
             </Box>
             <Box>
-              <ProgressBar value={0.62} width={16} />
+              <ProgressBar value={0.62} width={16} showPercent={false} />
               <Text color={t.fgDim}>{' 62%'}</Text>
             </Box>
           </Pane>
@@ -742,6 +824,8 @@ function App({
             <ContractSection />
             <CategorySection />
             <ComponentSection />
+            <FormSection />
+            <ProgressSection interactive={interactive} />
             <MotionSection interactive={interactive} />
             <Text color={t.fgFaint}>{"— if you can't draw it with characters, it doesn't belong in a blink app —"}</Text>
           </Box>
