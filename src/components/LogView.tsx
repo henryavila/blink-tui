@@ -128,7 +128,7 @@ export function LogView({
   return (
     <Box ref={ref} flexDirection="column">
       {showAbove ? (
-        <Text color={tokens.fgDim}>{`${g('moreAbove')} ${aboveCount} more`}</Text>
+        <Text color={tokens.fgFaint}>{`${g('moreAbove')} ${aboveCount} more`}</Text>
       ) : null}
       {window.map((row, idx) => (
         <Text key={start + idx} color={tokens.fg} wrap="truncate">

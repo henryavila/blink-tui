@@ -47,13 +47,17 @@ export function DescriptionList({
       {items.map((it, i) => {
         const st = it.state ? stateGlyph(it.state) : null;
         return (
-          <Box key={i} flexDirection="row">
+          <Box key={i} flexDirection="row" gap={1}>
             {it.term != null ? (
               <Box width={gutter} flexShrink={0}>
                 <Text color={tokens.fgDim} wrap="truncate">{it.term}</Text>
               </Box>
             ) : null}
-            {st ? <Text color={tokens[st.token]}>{g(st.glyph) + ' '}</Text> : null}
+            {st ? (
+              <Box width={1} flexShrink={0}>
+                <Text color={tokens[st.token]}>{g(st.glyph)}</Text>
+              </Box>
+            ) : null}
             <Text color={it.muted ? tokens.fgMuted : tokens.fg} wrap="truncate">
               {it.value}
             </Text>

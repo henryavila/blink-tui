@@ -56,10 +56,16 @@ function chipWidth(h: HotkeyDef): number {
  * from the right rather than clipped mid-word (a chip reading `he` or a `q` with
  * no label is worse than one fewer key). Apps should order `keys` by importance.
  *
- * Ink's `<Box>` has no fill, so the sunken background lives on the `<Text>`
- * leaves (behind the actual glyphs) rather than the row box — the same way
- * inverse hotkey chips are filled. The padding cells stay unfilled, matching
- * how a terminal status bar reads.
+ * Ink's `<Box>` has no fill (only `<Text>` takes `backgroundColor`), and a
+ * terminal cell can't layer — every cell is one glyph with one fg + one bg. So
+ * the solid sunken bar of the design system is built by making the *gaps and
+ * padding themselves* background-carrying spaces inside a single `<Text>`, with
+ * the inverse key chips nested as `<Text>` that override the bg. That paints the
+ * whole row edge-to-edge rather than only the cells under the glyphs.
+ *
+ * A measurable (string) `right` is flush-right with an exact space fill. An
+ * unmeasurable React-node `right` falls back to the flex layout below (its
+ * middle gap stays unfilled), since the fill width can't be computed.
  */
 export function Footer({ keys = [], right, marginTop = 1 }: FooterProps): React.ReactElement {
   const tokens = useTokens();
@@ -67,7 +73,8 @@ export function Footer({ keys = [], right, marginTop = 1 }: FooterProps): React.
 
   // Reserve the row: paddingX (2) + the right status (if measurable) + a 1-cell
   // breathing gap before it. Only string `right` can be measured; nodes reserve 0.
-  const rightWidth = typeof right === 'string' ? cellWidth(right) : 0;
+  const rightStr = typeof right === 'string' ? right : null;
+  const rightWidth = rightStr != null ? cellWidth(rightStr) : 0;
   const budget = Math.max(0, columns - 2 - (rightWidth > 0 ? rightWidth + 1 : 0));
 
   // Greedily keep whole chips that fit (3-cell gap between them); drop the rest.
@@ -80,20 +87,42 @@ export function Footer({ keys = [], right, marginTop = 1 }: FooterProps): React.
     shown.push(h);
   }
 
-  return (
-    <Box flexDirection="row" paddingX={1} justifyContent="space-between" marginTop={marginTop} flexShrink={0}>
-      <Box flexDirection="row" gap={3} flexShrink={1} overflow="hidden">
-        {shown.map((h, i) => (
-          <Hotkey key={i} k={h.k} desc={h.desc} />
-        ))}
-      </Box>
-      {right != null ? (
+  // Node `right`: can't measure it, so keep the flex layout (middle gap unfilled).
+  if (right != null && rightStr == null) {
+    return (
+      <Box flexDirection="row" paddingX={1} justifyContent="space-between" marginTop={marginTop} flexShrink={0}>
+        <Box flexDirection="row" gap={3} flexShrink={1} overflow="hidden">
+          {shown.map((h, i) => (
+            <Hotkey key={i} k={h.k} desc={h.desc} />
+          ))}
+        </Box>
         <Box flexShrink={0}>
           <Text color={tokens.fgFaint} backgroundColor={tokens.bgSunken} wrap="truncate">
             {right}
           </Text>
         </Box>
-      ) : null}
+      </Box>
+    );
+  }
+
+  // String / no `right`: one continuous sunken bar. `1` left pad, `1` right pad.
+  const fill = ' '.repeat(Math.max(0, columns - 1 - used - rightWidth - 1));
+
+  return (
+    <Box marginTop={marginTop} flexShrink={0}>
+      <Text backgroundColor={tokens.bgSunken} wrap="truncate">
+        {' '}
+        {shown.map((h, i) => (
+          <Text key={i}>
+            {i > 0 ? '   ' : ''}
+            <Text color={tokens.fgInverse} backgroundColor={tokens.bgInverse}>{' ' + h.k + ' '}</Text>
+            <Text color={tokens.fgMuted}>{' ' + h.desc}</Text>
+          </Text>
+        ))}
+        {fill}
+        {rightStr != null ? <Text color={tokens.fgFaint}>{rightStr}</Text> : null}
+        {' '}
+      </Text>
     </Box>
   );
 }

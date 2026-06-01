@@ -93,7 +93,7 @@ function OverflowMarker({ glyph, count }: { glyph: string; count: number }): Rea
   return (
     <Box flexDirection="row">
       <Text> </Text>
-      <Text color={tokens.fgDim}>{`${glyph} ${count} more`}</Text>
+      <Text color={tokens.fgFaint}>{`${glyph} ${count} more`}</Text>
     </Box>
   );
 }
