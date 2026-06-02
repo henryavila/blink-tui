@@ -797,7 +797,9 @@ function App({
         right={
           <Box>
             <Spinner active={interactive} />
-            <Text color={t.fgMuted}>{' every token · glyph · component'}</Text>
+            <Text color={t.fgMuted}>{' theme · '}</Text>
+            <Text color={t.accent}>{theme.label}</Text>
+            <Text color={t.fgFaint}>{` (${theme.mode})`}</Text>
           </Box>
         }
       />
