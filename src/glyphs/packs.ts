@@ -91,7 +91,7 @@ export const DATABASES = {
 /** cloud — cloud / devops / infra. */
 export const CLOUD = {
   aws: { nerd: cp('f375'), unicode: '◆', ascii: 'aws', color: 'domainAmber' },
-  cloud: { nerd: cp('f0c2'), unicode: '☁', ascii: 'cl', color: 'domainCyan' },
+  cloud: { nerd: cp('f0c2'), unicode: '◌', ascii: 'cl', color: 'domainCyan' }, // ◌ over the double-wide ☁ (same width-1 rule as bolt/ngrok/mailpit)
   server: { nerd: cp('f233'), unicode: '▤', ascii: 'srv', color: 'domainNeutral' },
   docker: { nerd: cp('f308'), unicode: '▦', ascii: 'dk', color: 'domainCyan' },
   kubernetes: { nerd: cp('e81d'), unicode: '◆', ascii: 'k8', color: 'domainBlue' },
@@ -130,6 +130,11 @@ export const COMPANIES = {
   slack: { nerd: cp('f198'), unicode: '◆', ascii: 'sl', color: 'domainViolet' },
   npm: { nerd: cp('e71e'), unicode: '◆', ascii: 'np', color: 'domainRed' },
   git: { nerd: cp('e702'), unicode: '◈', ascii: 'gt', color: 'domainAmber' },
+  // Anthropic / Claude — no verified Nerd Font codepoint, so `nerd` is left empty
+  // and the glyph degrades to ✶ (a width-1 sunburst, evoking the Claude mark);
+  // accent = the brand lavender. Same empty-nerd→unicode pattern as DEVINFRA's
+  // tailscale/syncthing/mosh. A curator can fill `nerd` if a glyph is verified.
+  claude: { nerd: '', unicode: '✶', ascii: 'cl', color: 'accent' },
 } satisfies Record<string, GlyphVariants>;
 
 /** frameworks — web / app frameworks. */
@@ -186,6 +191,29 @@ export const ACTIONS = {
   link: { nerd: cp('f0c1'), unicode: '∞', ascii: 'ln', color: 'link' },
 } satisfies Record<string, GlyphVariants>;
 
+/**
+ * system — general-purpose system / OS / UI domain glyphs.
+ *
+ * The recurring "thing" glyphs that aren't a brand (→ {@link COMPANIES}), an
+ * action verb (→ {@link ACTIONS}), or a file format (→ {@link FILES}): a
+ * terminal, a globe, a home, a key, an envelope. Every `nerd` codepoint is a
+ * classic Font Awesome value; each carries a width-1 `unicode` fallback
+ * (verified via `string-width`) so it never tofus on a non–Nerd-Font terminal.
+ */
+export const SYSTEM = {
+  terminal: { nerd: cp('f120'), unicode: '❯', ascii: 'tm', color: 'domainGreen' }, // fa-terminal
+  code: { nerd: cp('f121'), unicode: '◇', ascii: 'cd', color: 'domainBlue' }, // fa-code
+  globe: { nerd: cp('f0ac'), unicode: '◍', ascii: 'wb', color: 'domainCyan' }, // fa-globe
+  home: { nerd: cp('f015'), unicode: '⌂', ascii: 'hm', color: 'domainNeutral' }, // fa-home
+  key: { nerd: cp('f084'), unicode: '⚿', ascii: 'ky', color: 'domainYellow' }, // fa-key
+  mail: { nerd: cp('f0e0'), unicode: '⊠', ascii: 'ml', color: 'domainBlue' }, // fa-envelope — ⊠ over the double-wide ✉
+  phone: { nerd: cp('f095'), unicode: '☏', ascii: 'tel', color: 'domainGreen' }, // fa-phone — ☏ over the double-wide ☎
+  package: { nerd: cp('f1b2'), unicode: '▦', ascii: 'pkg', color: 'domainAmber' }, // fa-cube
+  sync: { nerd: cp('f021'), unicode: '↻', ascii: 'sy', color: 'domainCyan' }, // fa-refresh
+  text: { nerd: cp('f0f6'), unicode: '▢', ascii: 'tx', color: 'domainNeutral' }, // fa-file-text
+  tools: { nerd: cp('f0ad'), unicode: '✦', ascii: 'tl', color: 'domainNeutral' }, // fa-wrench
+} satisfies Record<string, GlyphVariants>;
+
 /** packages — package managers. */
 export const PACKAGES = {
   npm: { nerd: cp('e71e'), unicode: '◆', ascii: 'np', color: 'domainRed' },
@@ -240,6 +268,7 @@ export const GLYPH_PACKS: Record<string, Record<string, GlyphVariants>> = {
   files: FILES,
   social: SOCIAL,
   actions: ACTIONS,
+  system: SYSTEM,
   packages: PACKAGES,
   devinfra: DEVINFRA,
 };

@@ -2,14 +2,19 @@ import React from 'react';
 import { Text } from 'ink';
 import { render } from 'ink-testing-library';
 import { describe, expect, test } from 'vitest';
+import stringWidth from 'string-width';
 import {
   ThemeProvider,
   mochaTokens,
   catppuccinMocha,
   glyph,
   glyphColor,
+  hasGlyph,
   registerGlyphs,
   COMMON_DOMAINS,
+  COMPANIES,
+  SYSTEM,
+  GLYPH_PACKS,
   stateGlyph,
   boxChars,
   spinnerFor,
@@ -93,6 +98,46 @@ describe('glyphs (dual-mode)', () => {
     expect(spinnerFor('ascii')[0]).toBe('|');
     expect(spinnerFor('unicode')[0]).toBe('⠋');
     expect(blocks.cursor).toBe('▎');
+  });
+});
+
+describe('SYSTEM pack (general-purpose domain glyphs)', () => {
+  test('covers the system/UI domain names with curated fallbacks', () => {
+    registerGlyphs(SYSTEM);
+    // A representative spread of the pack's names, all opted-in.
+    for (const name of ['terminal', 'code', 'globe', 'home', 'key', 'mail', 'phone', 'package', 'sync', 'text', 'tools']) {
+      expect(hasGlyph(name)).toBe(true);
+      // unicode + ascii degrade, never the bare name (never tofu).
+      expect(glyph(name, 'unicode')).not.toBe(name);
+      expect(glyph(name, 'ascii')).not.toBe(name);
+      expect(glyphColor(name)).toBeTruthy();
+    }
+    // The Font-Awesome nerd codepoints resolve (spot-check terminal = fa-terminal).
+    expect(glyph('terminal', 'nerd').codePointAt(0)).toBe(0xf120);
+    expect(glyph('mail', 'nerd').codePointAt(0)).toBe(0xf0e0);
+  });
+
+  test('claude lives in COMPANIES and degrades to a width-1 mark (no verified NF glyph)', () => {
+    registerGlyphs(COMPANIES);
+    expect(hasGlyph('claude')).toBe(true);
+    expect(glyph('claude', 'unicode')).toBe('✶');
+    expect(glyph('claude', 'nerd')).toBe('✶'); // empty nerd → falls back to unicode
+    expect(glyphColor('claude')).toBe('accent');
+  });
+});
+
+describe('glyph grid-safety invariant', () => {
+  // The footer-drop class of bug: a double-wide unicode fallback silently breaks
+  // the one-glyph-one-cell grid (List columns drift, highlight bands tear). Every
+  // curated pack's unicode + ascii fallback must measure at most one cell wide.
+  test('every pack glyph fallback is at most one cell wide (string-width)', () => {
+    for (const [packName, pack] of Object.entries(GLYPH_PACKS)) {
+      for (const [name, v] of Object.entries(pack)) {
+        expect(stringWidth(v.unicode), `${packName}.${name} unicode "${v.unicode}"`).toBeLessThanOrEqual(1);
+        // ascii codes are short labels (≤3) but must still never exceed their cell budget badly.
+        expect(v.ascii.length, `${packName}.${name} ascii "${v.ascii}"`).toBeLessThanOrEqual(3);
+      }
+    }
   });
 });
 
