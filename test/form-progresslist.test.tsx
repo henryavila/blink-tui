@@ -75,13 +75,13 @@ describe('Form — render', () => {
     expect(frame).not.toContain('abcd');
   });
 
-  test('multiselect draws ☑ for selected and ☐ for unselected (framework-owned)', () => {
+  test('multiselect draws ■ for selected and ☐ for unselected (framework-owned)', () => {
     const fields: FieldSpec[] = [
       { name: 'v', kind: 'multiselect', label: 'PHP', choices: ['8.2', '8.3'] },
     ];
     const { lastFrame } = wrap(<Form fields={fields} values={{ v: ['8.3'] }} focusId="v::8.3" />);
     const frame = lastFrame() ?? '';
-    expect(frame).toContain('☑'); // selected
+    expect(frame).toContain('■'); // selected (width-1; ☑ tore the grid on narrow terminals)
     expect(frame).toContain('☐'); // unselected
     expect(frame).toContain('8.2');
     expect(frame).toContain('8.3');

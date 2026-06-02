@@ -27,7 +27,13 @@ export const stateGlyphs = {
   cross: { nerd: '✗', unicode: '✗', ascii: '[!]' },
   circle: { nerd: '◯', unicode: '◯', ascii: '[ ]' },
   half: { nerd: '◐', unicode: '◐', ascii: '[~]' },
-  checkboxOn: { nerd: '☑', unicode: '☑', ascii: '[*]' },
+  // ⚠ WIDTH-1 — do NOT swap to ☑ (U+2611). string-width measures ☑ as TWO
+  // cells, but ambiguous-width terminals (the non-CJK default) paint it as ONE
+  // → List/Form reserve 2 columns, the terminal fills 1, and the selection
+  // background tears a phantom hole right after the checkbox (audited 2026-06-02
+  // on the mesh picker). ■ (U+25A0) is the width-1 "on" box; it pairs with the
+  // width-1 ☐ (off) and ▣ (locked) so the whole checkbox column holds the grid.
+  checkboxOn: { nerd: '■', unicode: '■', ascii: '[*]' },
   checkboxOff: { nerd: '☐', unicode: '☐', ascii: '[ ]' },
   // selected + locked (a required item — no toggle).
   checkboxLock: { nerd: '▣', unicode: '▣', ascii: '[#]' },

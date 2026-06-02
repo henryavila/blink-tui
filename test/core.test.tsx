@@ -10,6 +10,7 @@ import {
   glyph,
   glyphColor,
   hasGlyph,
+  selectionIntents,
   registerGlyphs,
   COMMON_DOMAINS,
   COMPANIES,
@@ -123,6 +124,21 @@ describe('SYSTEM pack (general-purpose domain glyphs)', () => {
     expect(glyph('claude', 'unicode')).toBe('✶');
     expect(glyph('claude', 'nerd')).toBe('✶'); // empty nerd → falls back to unicode
     expect(glyphColor('claude')).toBe('accent');
+  });
+});
+
+describe('selection-glyph grid-safety invariant', () => {
+  // The checkbox column reserves a fixed cell width; a width-2 glyph that an
+  // ambiguous-width terminal paints as 1 (e.g. the old ☑ = U+2611) tears a
+  // phantom hole in the selection background right after the checkbox. Every
+  // selection intent glyph MUST be width-1 in both nerd and unicode sets.
+  test('selected / unselected / locked checkboxes are width-1', () => {
+    for (const intent of ['selected', 'unselected', 'locked'] as const) {
+      const name = selectionIntents[intent].glyph;
+      for (const set of ['nerd', 'unicode'] as const) {
+        expect(stringWidth(glyph(name, set)), `${intent} (${name}) in ${set}`).toBe(1);
+      }
+    }
   });
 });
 

@@ -108,7 +108,7 @@ test('reserves the state cell on state-less rows so labels stay column-aligned',
   expect(stated.indexOf('has-state')).toBe(bare.indexOf('no-state'));
 });
 
-test('a selection intent renders the checkbox glyph (☑ / ☐)', () => {
+test('a selection intent renders the checkbox glyph (■ / ☐ / ▣)', () => {
   const checks: ListRowData[] = [
     { id: 'a', label: 'pull images', selected: true },
     { id: 'b', label: 'run migrations', selected: false },
@@ -120,7 +120,7 @@ test('a selection intent renders the checkbox glyph (☑ / ☐)', () => {
     </ThemeProvider>,
   );
   const frame = lastFrame() ?? '';
-  expect(frame).toContain('☑'); // selected
+  expect(frame).toContain('■'); // selected (width-1; ☑ tore the grid on narrow terminals)
   expect(frame).toContain('☐'); // unselected
   expect(frame).toContain('▣'); // locked (required, non-toggle)
 });

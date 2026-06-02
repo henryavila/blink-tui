@@ -234,8 +234,9 @@ function FieldLabel({ label, required }: { label: string; required?: boolean }):
 /**
  * A single choice token: a SELECTION glyph + label. Selected → `fg`,
  * unselected → `fgMuted`; the focused choice carries the `bgFocused` fill. The
- * glyph cell is a fixed 2 cells (the `☑` width) so the label start never jitters
- * between `☑` / `☐` / `▣`.
+ * glyph cell is a fixed 2 cells so the label start never jitters between the
+ * selection glyphs (`■` / `☐` / `▣`) — each is width-1 and pads to the 2-cell
+ * slot with a background-carrying space.
  */
 function Choice({
   selected,
