@@ -11,6 +11,8 @@ import {
   glyphColor,
   hasGlyph,
   selectionIntents,
+  stateGlyphs,
+  navGlyphs,
   registerGlyphs,
   COMMON_DOMAINS,
   COMPANIES,
@@ -124,6 +126,27 @@ describe('SYSTEM pack (general-purpose domain glyphs)', () => {
     expect(glyph('claude', 'unicode')).toBe('✶');
     expect(glyph('claude', 'nerd')).toBe('✶'); // empty nerd → falls back to unicode
     expect(glyphColor('claude')).toBe('accent');
+  });
+});
+
+describe('contract-glyph grid-safety invariant', () => {
+  // The Tier-0 contract glyphs (state + nav) render inside fixed-width cells and
+  // selection/focus bands. Any width-2 entry that a narrow-ambiguous terminal
+  // paints as 1 tears the grid (the ☑→■, ⚠→△, ◀→◄ audits). Every contract
+  // glyph variant MUST be exactly one cell.
+  test('every state + nav glyph variant is width-1', () => {
+    for (const [table, tname] of [
+      [stateGlyphs, 'state'],
+      [navGlyphs, 'nav'],
+    ] as const) {
+      for (const [name, v] of Object.entries(table)) {
+        for (const set of ['nerd', 'unicode', 'ascii'] as const) {
+          // ascii is allowed multi-char ([x], [~]) — only the glyph forms must be 1 cell.
+          if (set === 'ascii') continue;
+          expect(stringWidth(v[set]), `${tname}.${name}.${set} = ${JSON.stringify(v[set])}`).toBe(1);
+        }
+      }
+    }
   });
 });
 

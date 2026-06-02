@@ -37,7 +37,11 @@ export const stateGlyphs = {
   checkboxOff: { nerd: '☐', unicode: '☐', ascii: '[ ]' },
   // selected + locked (a required item — no toggle).
   checkboxLock: { nerd: '▣', unicode: '▣', ascii: '[#]' },
-  warn: { nerd: '⚠', unicode: '⚠', ascii: '[!]' },
+  // WIDTH-1 — ⚠ (U+26A0) measures 2 in string-width but paints 1 in
+  // ambiguous-width terminals (same grid tear as the old ☑ checkbox). nerd uses
+  // the Nerd Font warning triangle (fa-warning, U+F071, width-1); unicode
+  // degrades to △ (width-1). Drives stateIntents.warn + Banner's warn tone.
+  warn: { nerd: '', unicode: '△', ascii: '[!]' },
   rerun: { nerd: '↻', unicode: '↻', ascii: '(*)' },
 } satisfies Record<string, GlyphVariants>;
 
@@ -56,7 +60,10 @@ export const navGlyphs = {
   expanded: { nerd: '▾', unicode: '▾', ascii: 'v' },
   depends: { nerd: '↳', unicode: '↳', ascii: '\\>' },
   flow: { nerd: '→', unicode: '→', ascii: '->' },
-  back: { nerd: '◀', unicode: '◀', ascii: '<' },
+  // ◄ (U+25C4) is the WIDTH-1 left sibling of the focus caret ► (U+25BA) — the
+  // same one-cell rule as the focus glyph above. ◀ (U+25C0) measures 2, so it
+  // would tear any grid that uses it (latent: currently unused).
+  back: { nerd: '◄', unicode: '◄', ascii: '<' },
   // Overflow markers for a windowed List / LogView — "there is more, off-screen".
   moreAbove: { nerd: '▴', unicode: '▴', ascii: '^' },
   moreBelow: { nerd: '▾', unicode: '▾', ascii: 'v' },
