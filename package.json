@@ -14,6 +14,14 @@
   ],
   "license": "MIT",
   "author": "Henry Avila <personal@henryavila.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/henryavila/blink-tui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/henryavila/blink-tui/issues"
+  },
+  "homepage": "https://github.com/henryavila/blink-tui#readme",
   "type": "module",
   "files": [
     "dist",
