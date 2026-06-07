@@ -1,0 +1,33 @@
+name: Publish to npm
+
+on:
+  release:
+    types: [published]
+
+# OIDC Trusted Publishing — sem npm token.
+# Requer o pacote configurado em npmjs.com → Settings → Trusted Publisher,
+# apontando para este repo + workflow (.github/workflows/publish.yml).
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      # OIDC trusted publishing exige npm >= 11.5.1
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+      # Sem NODE_AUTH_TOKEN — o OIDC cuida da autenticação via id-token,
+      # e --provenance anexa a attestation de origem ao pacote.
+      - run: npm publish --provenance --access public
