@@ -3,6 +3,7 @@ import { Box, Text } from 'ink';
 import { useTokens } from '../theme/context.js';
 import { useGlyph } from '../glyphs/useGlyph.js';
 import { selectionIntents } from '../glyphs/glyphs.js';
+import type { SemanticTokens } from '../theme/tokens.js';
 import { cellWidth } from '../textWidth.js';
 import { Input } from './CursorInput.js';
 
@@ -20,7 +21,15 @@ import { Input } from './CursorInput.js';
  */
 
 /** The control a field renders — the ONLY look prop. */
-export type FieldKind = 'text' | 'secret' | 'toggle' | 'select' | 'multiselect';
+export type FieldKind = 'text' | 'secret' | 'toggle' | 'select' | 'multiselect' | 'path';
+
+/**
+ * For a `path` field — a presentational status hint, an INTENT name (not a glyph
+ * or colour). blink maps it to a state glyph + tone; the APP decides which one by
+ * doing its own `fs.stat` (blink does no I/O). `exists` → check/ok,
+ * `create` → warn, `invalid` → cross/err.
+ */
+export type PathStatus = 'exists' | 'create' | 'invalid';
 
 /** A choice for a `select` / `multiselect` — a bare id, or an id with a label. */
 export type ChoiceInput = string | { id: string; label?: string };
@@ -51,6 +60,18 @@ export interface FieldSpec {
   min?: number;
   /** `multiselect` upper bound — Form refuses to select above it. */
   max?: number;
+  /**
+   * For `kind: 'path'` — the resolved preview shown on a second, dim line under
+   * the value (e.g. `→ /home/me/code`). The APP computes this (it owns
+   * `os.homedir()` / env expansion); blink only renders it. Omit = no preview line.
+   */
+  preview?: string;
+  /**
+   * For `kind: 'path'` — a presentational status hint rendered as a state glyph +
+   * tone next to the preview. The APP computes it (it owns `fs.stat`); blink maps
+   * the INTENT name → glyph/colour. Omit = no status slot. See {@link PathStatus}.
+   */
+  status?: PathStatus;
 }
 
 /** A single field's value: a string (text/secret/select), a set of ids (multiselect), or a flag (toggle). */
@@ -280,6 +301,46 @@ function ErrorLine({ msg }: { msg?: string }): React.ReactElement | null {
   );
 }
 
+/**
+ * Path status name → glyph + colour token + label. Local, like ProgressList's
+ * `PROGRESS_STATES` — the vocabulary (`exists` / `create` / `invalid`) is specific
+ * to a path field, but each row reuses an existing state glyph (`check` / `warn` /
+ * `cross`), so there is no new glyph and no new colour decision.
+ */
+const PATH_STATUS = {
+  exists: { glyph: 'check', token: 'stateOk', label: 'exists' },
+  create: { glyph: 'warn', token: 'stateWarn', label: 'will be created' },
+  invalid: { glyph: 'cross', token: 'stateErr', label: 'invalid' },
+} satisfies Record<PathStatus, { glyph: string; token: keyof SemanticTokens; label: string }>;
+
+/**
+ * The dim `→ <preview>  ✓ <status>` line under a `path` field's value. App-fed and
+ * render-only: blink never resolves `~` or stats the path (no I/O) — the app
+ * computes `preview` + `status` and feeds them as it already feeds `value`. The
+ * `→` is the `flow` glyph (degrades to `->`); the status glyph + tone come from
+ * the state intents. Renders nothing when both are absent.
+ */
+function PathHint({ preview, status }: { preview?: string; status?: PathStatus }): React.ReactElement | null {
+  const tokens = useTokens();
+  const g = useGlyph();
+  if (!preview && status == null) return null;
+  const st = status != null ? PATH_STATUS[status] : null;
+  return (
+    <Box flexDirection="row" paddingLeft={1}>
+      {preview ? (
+        <Text color={tokens.fgDim} wrap="truncate">{`${g('flow')} ${preview}`}</Text>
+      ) : null}
+      {st ? (
+        <Box flexDirection="row">
+          {preview ? <Text>{'  '}</Text> : null}
+          <Text color={tokens[st.token]}>{g(st.glyph)}</Text>
+          <Text color={tokens.fgMuted}>{' ' + st.label}</Text>
+        </Box>
+      ) : null}
+    </Box>
+  );
+}
+
 /** The control for one field — resolved from its `kind`. */
 function FieldControl({
   field,
@@ -297,11 +358,13 @@ function FieldControl({
   const tokens = useTokens();
   const focusedHere = !!focusStop && focusStop.name === field.name;
 
-  if (field.kind === 'text' || field.kind === 'secret') {
+  if (field.kind === 'text' || field.kind === 'secret' || field.kind === 'path') {
     const isSecret = field.kind === 'secret';
     const str = value == null ? '' : String(value);
     const display = isSecret ? '•'.repeat(str.length) : str;
-    // text/secret reuse Input: its rounded box, ▎ cursor, placeholder + error.
+    // text/secret/path reuse Input: its rounded box, ▎ cursor, placeholder + error.
+    // A `path` field edits EXACTLY like `text` (app owns keys via setText — Space is
+    // a literal char, not a toggle); it only adds the app-fed preview/status line.
     return (
       <Box flexDirection="column">
         <Input value={display} placeholder={field.placeholder ?? ''} focused={focusedHere} error={error} />
@@ -310,6 +373,7 @@ function FieldControl({
             <Text color={tokens.fgFaint}>{'␣ reveal'}</Text>
           </Box>
         ) : null}
+        {field.kind === 'path' ? <PathHint preview={field.preview} status={field.status} /> : null}
       </Box>
     );
   }
@@ -372,7 +436,7 @@ export function Form({ fields, values = {}, focusId, errors = {} }: FormProps): 
   return (
     <Box flexDirection="column">
       {fields.map((f) => {
-        const textual = f.kind === 'text' || f.kind === 'secret';
+        const textual = f.kind === 'text' || f.kind === 'secret' || f.kind === 'path';
         return (
           <Box key={f.name} flexDirection="column" marginBottom={1}>
             <FieldLabel label={f.label} required={f.required} />

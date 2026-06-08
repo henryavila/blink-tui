@@ -272,7 +272,7 @@ Override env vars: `BLINK_ICON_SET=nerd|unicode|ascii`, `BLINK_NERD_FONT=1|0`,
 | `Spinner` | braille spinner (ASCII fallback), driven by `useSpinnerFrame` |
 | `ProgressBar` | determinate bar from the eighth-block ramp; `value` (0..1) + `width` |
 | `ProgressList` | job runner: per-line `state` (`pending`/`running`/`ok`/`failed`/`waiting`/`skipped`) → glyph or live spinner + colour; windows + follows the active line like `List` |
-| `Form` / `useFormNavigation` | labelled fields by `kind` (`text`/`secret`/`toggle`/`select`/`multiselect`); blink owns the control glyph, focus fill, required `*`, and error line; the headless hook drives keys (`next`/`prev`/`toggle`/`setText`/`commit`) |
+| `Form` / `useFormNavigation` | labelled fields by `kind` (`text`/`secret`/`toggle`/`select`/`multiselect`/`path`); blink owns the control glyph, focus fill, required `*`, and error line; `path` edits like `text` and adds an app-fed `preview` (resolved `→ …`) + `status` (`exists`/`create`/`invalid` → state glyph, no I/O in blink); the headless hook drives keys (`next`/`prev`/`toggle`/`setText`/`commit`) |
 
 ### hooks
 

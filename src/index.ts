@@ -155,6 +155,7 @@ export type {
   FormProps,
   FieldSpec,
   FieldKind,
+  PathStatus,
   FieldValue,
   FormValues,
   FormValidation,

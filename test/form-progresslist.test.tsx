@@ -100,6 +100,68 @@ describe('Form — render', () => {
   });
 });
 
+describe('Form — path field', () => {
+  test('a path field with no preview/status renders like a labelled text field', () => {
+    const path: FieldSpec[] = [{ name: 'root', kind: 'path', label: 'Dev root' }];
+    const text: FieldSpec[] = [{ name: 'root', kind: 'text', label: 'Dev root' }];
+    const p = wrap(<Form fields={path} values={{ root: '~/code' }} focusId="root" />).lastFrame() ?? '';
+    const t = wrap(<Form fields={text} values={{ root: '~/code' }} focusId="root" />).lastFrame() ?? '';
+    expect(p).toBe(t);
+  });
+
+  test('preview renders the dim → line; absent = no second line', () => {
+    const withPreview: FieldSpec[] = [
+      { name: 'root', kind: 'path', label: 'Dev root', preview: '/home/me/code' },
+    ];
+    const frame = wrap(<Form fields={withPreview} values={{ root: '~/code' }} />).lastFrame() ?? '';
+    expect(frame).toContain('→'); // flow glyph (unicode)
+    expect(frame).toContain('/home/me/code');
+
+    const noPreview: FieldSpec[] = [{ name: 'root', kind: 'path', label: 'Dev root' }];
+    const bare = wrap(<Form fields={noPreview} values={{ root: '~/code' }} />).lastFrame() ?? '';
+    expect(bare).not.toContain('→');
+  });
+
+  test('each status renders its state glyph + tone (exists→✓, create→warn, invalid→✗)', () => {
+    const mk = (status: 'exists' | 'create' | 'invalid') =>
+      wrap(
+        <Form
+          fields={[{ name: 'root', kind: 'path', label: 'Dev root', status }]}
+          values={{ root: '~/code' }}
+        />,
+      ).lastFrame() ?? '';
+
+    const exists = mk('exists');
+    expect(exists).toContain('✓');
+    expect(exists).toContain('exists');
+
+    const create = mk('create');
+    expect(create).toContain('△'); // warn glyph degrades to △ in unicode
+    expect(create).toContain('will be created');
+
+    const invalid = mk('invalid');
+    expect(invalid).toContain('✗');
+    expect(invalid).toContain('invalid');
+  });
+
+  test('a required empty path still produces the standard required error', () => {
+    const fields: FieldSpec[] = [{ name: 'root', kind: 'path', label: 'Dev root', required: true }];
+    const { ok, errors } = validateForm(fields, { root: '' });
+    expect(ok).toBe(false);
+    expect(errors.root).toBe('required');
+    const frame = wrap(<Form fields={fields} values={{ root: '' }} errors={errors} />).lastFrame() ?? '';
+    expect(frame).toContain('✗'); // Input's own error line
+    expect(frame).toContain('required');
+  });
+
+  test('a path field is a single focus stop (edits like text, not a choice field)', () => {
+    const fields: FieldSpec[] = [{ name: 'root', kind: 'path', label: 'Dev root' }];
+    const stops = buildStops(fields, { root: '~/code' });
+    expect(stops.map((s) => s.id)).toEqual(['root']);
+    expect(stops[0]!.choiceId).toBeNull();
+  });
+});
+
 describe('ProgressList', () => {
   const ITEMS: ProgressItem[] = [
     { id: 'a', label: 'install deps', state: 'ok', meta: '2.1s' },
