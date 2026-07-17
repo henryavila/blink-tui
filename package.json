@@ -1,6 +1,6 @@
 {
   "name": "@henryavila/blink-tui",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "blink — a framework for building modern, elegant TUI apps. Catppuccin-themed Ink (React for the terminal) primitives, dual-mode Nerd Font glyphs, and a strict character-cell visual contract.",
   "keywords": [
     "tui",
@@ -14,11 +14,20 @@
   ],
   "license": "MIT",
   "author": "Henry Avila <personal@henryavila.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/henryavila/blink-tui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/henryavila/blink-tui/issues"
+  },
+  "homepage": "https://github.com/henryavila/blink-tui#readme",
   "type": "module",
   "files": [
     "dist",
-    "assets/fonts",
-    "README.md"
+    "!dist/**/*.map",
+    "README.md",
+    "LICENSE"
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -32,6 +41,7 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
+    "prepublishOnly": "npm run build",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
