@@ -32,6 +32,14 @@ import {
   Form,
   validateForm,
   Cursor,
+  LinkPanel,
+  WaitGate,
+  StageRail,
+  GuidedPrompt,
+  ChoicePicker,
+  RunSummary,
+  MetricStrip,
+  KeyHints,
   useTokens,
   useGlyph,
   useStdoutDimensions,
@@ -49,6 +57,9 @@ import {
   type FieldSpec,
   type FormValues,
   type ProgressItem,
+  type StageItem,
+  type ChoiceItem,
+  type MetricItem,
 } from '../src/index.js';
 
 // blink core ships no domain glyphs; the inventory opts into the Tier 1 pack —
@@ -671,6 +682,126 @@ function ProgressSection({ interactive }: { interactive: boolean }): React.React
   );
 }
 
+// ── OPERATOR PACK ───────────────────────────────────────────────────────────
+// Guided multi-phase operator CLIs: stage orientation, external handoff wait,
+// one-question prompts, dense pickers, boundary summary, live metrics, local
+// key hints. Domain-neutral copy only — apps map product events → intent.
+
+const OPERATOR_STAGES: StageItem[] = [
+  { id: 'a', label: 'setup', state: 'ok' },
+  { id: 'b', label: 'prompt', state: 'ok' },
+  { id: 'c', label: 'build', state: 'running' },
+  { id: 'd', label: 'check', state: 'pending' },
+  { id: 'e', label: 'ship', state: 'pending' },
+];
+
+const OPERATOR_CHOICES: ChoiceItem[] = [
+  { id: 'a', label: 'option · small', meta: '12 MB' },
+  { id: 'b', label: 'option · medium', meta: '28 MB' },
+  { id: 'c', label: 'option · large', meta: '64 MB' },
+];
+
+const OPERATOR_METRICS: MetricItem[] = [
+  { id: 'd', label: 'done', value: '12/40' },
+  { id: 'e', label: 'elapsed', value: '2m 14s' },
+  { id: 'r', label: 'rate', value: '3.1/s' },
+];
+
+function OperatorSection({ interactive }: { interactive: boolean }): React.ReactElement {
+  const t = useTokens();
+  return (
+    <Box flexDirection="column">
+      <SectionTitle
+        title="COMPONENTS · OPERATOR"
+        sub="StageRail · WaitGate · LinkPanel · GuidedPrompt · ChoicePicker · RunSummary · MetricStrip · KeyHints"
+      />
+
+      <Pane title="long run · orientation" tone="focus" flexGrow={0}>
+        <StageRail stages={OPERATOR_STAGES} animate={interactive} />
+        <Box marginTop={1}>
+          <MetricStrip metrics={OPERATOR_METRICS} />
+        </Box>
+        <Text color={t.fgFaint} wrap="truncate">
+          rail = phases · ProgressList = steps inside the active phase
+        </Text>
+      </Pane>
+
+      <Box marginTop={1} flexDirection="row" gap={1}>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="handoff · wait" flexGrow={0}>
+            <WaitGate
+              title="link ready"
+              status="waiting"
+              href="http://127.0.0.1:7421/app"
+              statusLabel="waiting for external action"
+              elapsed="elapsed 1m 02s"
+              details={[
+                { label: 'host', value: '127.0.0.1' },
+                { label: 'port', value: '7421' },
+              ]}
+              hints={[
+                { k: 'o', desc: 'open' },
+                { k: 'enter', desc: 'continue' },
+              ]}
+            />
+          </Pane>
+        </Box>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="link panel" flexGrow={0}>
+            <LinkPanel
+              title="docs available"
+              href="https://example.com/guide"
+              status="ready"
+              statusLabel="ready"
+            />
+            <Box marginTop={1}>
+              <KeyHints keys={[{ k: 'o', desc: 'open' }, { k: 'c', desc: 'copy' }]} />
+            </Box>
+          </Pane>
+        </Box>
+      </Box>
+
+      <Box marginTop={1} flexDirection="row" gap={1}>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="guided prompt" flexGrow={0}>
+            <GuidedPrompt
+              question="pick a size"
+              defaultValue="medium"
+              choices={[
+                { id: 'small', label: 'small' },
+                { id: 'medium', label: 'medium' },
+                { id: 'large', label: 'large' },
+              ]}
+              focusedId="medium"
+              value="medium"
+            />
+          </Pane>
+        </Box>
+        <Box flexBasis={0} flexGrow={1} minWidth={0}>
+          <Pane title="choice picker" flexGrow={0}>
+            <ChoicePicker choices={OPERATOR_CHOICES} focusedId="b" height={5} />
+          </Pane>
+        </Box>
+      </Box>
+
+      <Box marginTop={1}>
+        <Pane title="run summary" flexGrow={0}>
+          <RunSummary
+            title="step finished · 3 items"
+            tone="success"
+            facts={[
+              { term: 'output', value: './out/build' },
+              { term: 'duration', value: '4m 12s' },
+              { term: 'warnings', value: '0' },
+            ]}
+            next="press enter to continue · q quit"
+          />
+        </Pane>
+      </Box>
+    </Box>
+  );
+}
+
 // ── MOTION ──────────────────────────────────────────────────────────────────
 
 function MotionSection({ interactive }: { interactive: boolean }): React.ReactElement {
@@ -828,6 +959,7 @@ function App({
             <ComponentSection />
             <FormSection />
             <ProgressSection interactive={interactive} />
+            <OperatorSection interactive={interactive} />
             <MotionSection interactive={interactive} />
             <Text color={t.fgFaint}>{"— if you can't draw it with characters, it doesn't belong in a blink app —"}</Text>
           </Box>

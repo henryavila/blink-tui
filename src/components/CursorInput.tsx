@@ -29,6 +29,11 @@ export interface InputProps {
   title?: string;
   /** Current field value. The app owns key handling; this is presentational. */
   value?: string;
+  /**
+   * Caret index in ``[0, value.length]``. When omitted, the caret trails the
+   * value (legacy end-of-line). Mid-string editing needs an explicit cursor.
+   */
+  cursor?: number;
   /** Hint shown in `fgDisabled` while the value is empty. */
   placeholder?: string;
   /** Focused fields round their border and trail a live cursor. */
@@ -39,8 +44,8 @@ export interface InputProps {
 
 /**
  * A single-line text field: a {@link Pane} wrapping one row of value (or
- * placeholder), with a {@link Cursor} trailing while focused. Value-driven and
- * presentational — the app feeds `value` and owns the keys.
+ * placeholder), with a {@link Cursor} at ``cursor`` while focused. Value-driven
+ * and presentational — the app feeds `value` / `cursor` and owns the keys.
  *
  * INTENT, NOT STYLE: the consumer never picks a border treatment; the field
  * derives its pane `tone` from its own state — `error` → red, `focused` →
@@ -49,6 +54,7 @@ export interface InputProps {
 export function Input({
   title,
   value = '',
+  cursor,
   placeholder = '',
   focused = false,
   error,
@@ -58,17 +64,33 @@ export function Input({
 
   const tone = error ? 'error' : focused ? 'focus' : 'resting';
   const empty = value.length === 0;
+  const caret =
+    cursor === undefined
+      ? value.length
+      : Math.max(0, Math.min(value.length, Math.floor(cursor)));
+  const before = value.slice(0, caret);
+  const after = value.slice(caret);
 
   return (
     <Box flexDirection="column">
       <Pane title={title} tone={tone} flexGrow={0}>
         <Box flexDirection="row">
-          {empty ? (
+          {empty && !focused ? (
             <Text color={tokens.fgDisabled}>{placeholder}</Text>
+          ) : empty && focused ? (
+            <>
+              <Cursor active />
+              {placeholder ? (
+                <Text color={tokens.fgDisabled}>{placeholder}</Text>
+              ) : null}
+            </>
           ) : (
-            <Text color={tokens.fg}>{value}</Text>
+            <>
+              <Text color={tokens.fg}>{before}</Text>
+              {focused ? <Cursor active /> : null}
+              <Text color={tokens.fg}>{after}</Text>
+            </>
           )}
-          {focused ? <Cursor active /> : null}
         </Box>
       </Pane>
       {error ? (

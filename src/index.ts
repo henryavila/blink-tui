@@ -164,3 +164,41 @@ export type {
   ChoiceInput,
   ResolvedChoice,
 } from './components/Form.js';
+
+// ─── Operator pack (guided multi-phase CLIs) ───────────────────────────────────
+export { LinkPanel, truncateHref } from './components/LinkPanel.js';
+export type { LinkPanelProps, LinkStatus, LinkDetail } from './components/LinkPanel.js';
+export { WaitGate } from './components/WaitGate.js';
+export type { WaitGateProps, WaitGateStatus } from './components/WaitGate.js';
+export { StageRail, pickStageRailMode } from './components/StageRail.js';
+export type { StageRailProps, StageItem } from './components/StageRail.js';
+export { GuidedPrompt, useGuidedPromptNavigation } from './components/GuidedPrompt.js';
+export type {
+  GuidedPromptProps,
+  GuidedChoice,
+  UseGuidedPromptNavigationOptions,
+  GuidedPromptNavigation,
+} from './components/GuidedPrompt.js';
+export { ChoicePicker } from './components/ChoicePicker.js';
+export type { ChoicePickerProps, ChoiceItem } from './components/ChoicePicker.js';
+export { FilePicker } from './components/FilePicker.js';
+export type {
+  FilePickerProps,
+  FileEntry,
+  FileEntryKind,
+} from './components/FilePicker.js';
+/** Live path-field → list target (inject probes; blink never reads disk). */
+export {
+  resolveLiveListing,
+  formatLiveCwdLabel,
+} from './filePicker/resolveLiveListing.js';
+export type {
+  PathProbes,
+  LiveListingTarget,
+} from './filePicker/resolveLiveListing.js';
+export { RunSummary } from './components/RunSummary.js';
+export type { RunSummaryProps } from './components/RunSummary.js';
+export { MetricStrip, fitMetrics } from './components/MetricStrip.js';
+export type { MetricStripProps, MetricItem } from './components/MetricStrip.js';
+export { KeyHints } from './components/KeyHints.js';
+export type { KeyHintsProps } from './components/KeyHints.js';
