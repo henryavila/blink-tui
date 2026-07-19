@@ -19,11 +19,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # npm@12+ needs Node ^22.22 / ^24.15; keep LTS 22 for OIDC publish.
+          node-version: 22
           registry-url: https://registry.npmjs.org
 
-      # OIDC trusted publishing exige npm >= 11.5.1
-      - run: npm install -g npm@latest
+      # OIDC trusted publishing exige npm >= 11.5.1 (pin — not npm@latest).
+      - run: npm install -g npm@11.5.1
       - run: npm ci
       - run: npm run build
       - run: npm test
