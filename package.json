@@ -1,6 +1,6 @@
 {
   "name": "@henryavila/blink-tui",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "blink — a framework for building modern, elegant TUI apps. Catppuccin-themed Ink (React for the terminal) primitives, dual-mode Nerd Font glyphs, and a strict character-cell visual contract.",
   "keywords": [
     "tui",
