@@ -136,7 +136,17 @@ export { DescriptionList } from './components/DescriptionList.js';
 export type { DescriptionListProps, DescriptionItem } from './components/DescriptionList.js';
 export { LogView } from './components/LogView.js';
 export type { LogViewProps } from './components/LogView.js';
-export { Footer, packFooterRows, packFooterColumns } from './components/Footer.js';
+export {
+  Footer,
+  packFooterRows,
+  packFooterColumns,
+  chipWidth,
+  keyChipWidth,
+  descChipWidth,
+  columnStartOffset,
+  columnSlotWidth,
+  rowUsedAligned,
+} from './components/Footer.js';
 export type { FooterProps, HotkeyDef, ColumnPack } from './components/Footer.js';
 export { Input, Cursor } from './components/CursorInput.js';
 export type { InputProps, CursorProps } from './components/CursorInput.js';

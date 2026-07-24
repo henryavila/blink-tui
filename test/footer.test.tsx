@@ -132,7 +132,7 @@ test('footer with many keys still shows late chips via second bar', () => {
   expect(frame).toContain('finished');
 });
 
-test('packFooterColumns balances into equal columns with per-column pads', () => {
+test('packFooterColumns balances into equal columns with key+desc slots', () => {
   // chipWidth ≈ 11 each; gap 3 → two chips = 25, three = 39
   const keys: HotkeyDef[] = [
     { k: 'a', desc: 'alphaaa' },
@@ -148,8 +148,9 @@ test('packFooterColumns balances into equal columns with per-column pads', () =>
   ]);
   // Same column count per full row → vertical alignment
   expect(packed.rows[0]!.length).toBe(packed.rows[1]!.length);
-  // Per-column widths equal chip width (all same length)
-  expect(packed.colWidths).toEqual([11, 11]);
+  // Shared key slot (single-char keys → width 3) + per-col desc slots
+  expect(packed.keySlot).toBe(3);
+  expect(packed.descSlots).toEqual([8, 8]); // ' alphaaa' etc. = 1+7
 });
 
 test('packFooterColumns drops overflow past maxRows capacity', () => {
