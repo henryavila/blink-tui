@@ -265,7 +265,7 @@ Override env vars: `BLINK_ICON_SET=nerd|unicode|ascii`, `BLINK_NERD_FONT=1|0`,
 | `Header` | the one-row top status bar — accent mark + title (`· subtitle`) + a right status slot |
 | `DescriptionList` | key/value block for a detail pane; rows take intent (`state`, `muted`), aligned to a gutter |
 | `LogView` | bottom-anchored, height-bounded tail of a growing line stream (subprocess output, build logs); `follow`/`wrap` |
-| `Footer` | the always-visible bottom hotkey bar; inverse-video key chips + a right status slot |
+| `Footer` | the always-visible bottom hotkey bar; inverse-video key chips + a right status slot. On narrow terminals chips wrap into up to `maxRows` bars; default `align="columns"` pads chips so columns stay vertically aligned across rows |
 | `Input` / `Cursor` | single-line field with the blinking `▎` cursor (presentational — wire keys with Ink's `useInput`); derives its `tone` from `focused`/`error` |
 | `Dialog` | centred rounded (lavender) modal; `tone` (`default`/`error`); plain-text `lines` or a rich `children` body; the primary action renders in inverse-accent |
 | `Banner` | one-line, non-blocking in-flow notice; `tone` (`info`/`success`/`warn`) — the framework owns the glyph |
