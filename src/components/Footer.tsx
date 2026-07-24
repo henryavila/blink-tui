@@ -337,24 +337,18 @@ function FooterRow({
     const kPad = aligned ? Math.max(0, keySlot - kNatural) : 0;
     const dPad = aligned ? Math.max(0, (descSlots[i] ?? dNatural) - dNatural) : 0;
 
-    // Inverse key chip + trailing pad inside the same styled run when possible.
-    // Key pad (to shared keySlot) uses sunken bg after the inverse chip.
+    // Pad to keySlot *inside* the inverse chip so every column shares one blue
+    // width. Pad after the chip (sunken) left short keys looking tiny — and
+    // punctuation like `,` sat low/cramped in a 3-cell inverse next to `sp`.
     parts.push(
       <Text
         key={`k-${i}`}
         color={tokens.fgInverse}
         backgroundColor={tokens.bgInverse}
       >
-        {' ' + h.k + ' '}
+        {' ' + h.k + ' ' + (kPad > 0 ? ' '.repeat(kPad) : '')}
       </Text>,
     );
-    if (kPad > 0) {
-      parts.push(
-        <Text key={`kp-${i}`} backgroundColor={tokens.bgSunken}>
-          {' '.repeat(kPad)}
-        </Text>,
-      );
-    }
     // Desc + desc pad in one muted sunken Text — pad cannot be stripped.
     parts.push(
       <Text
